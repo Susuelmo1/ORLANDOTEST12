@@ -56,9 +56,9 @@ client.on('guildMemberAdd', async (member) => {
     if (global.config?.welcome?.enabled) {
       const welcomeChannelId = global.config.welcome.channelId || '1337553581250838639';
       const rulesChannelId = global.config.welcome.rulesChannelId || '1337591756161683466';
-      
+
       const welcomeChannel = await member.guild.channels.fetch(welcomeChannelId).catch(() => null);
-      
+
       if (welcomeChannel) {
         // Create welcome embed
         const welcomeEmbed = new EmbedBuilder()
@@ -69,9 +69,9 @@ client.on('guildMemberAdd', async (member) => {
           )
           .setColor(0x9B59B6)
           .setTimestamp();
-        
+
         await welcomeChannel.send({ embeds: [welcomeEmbed] });
-        
+
         // Send a DM to the new member with more information
         try {
           const dmEmbed = new EmbedBuilder()
@@ -85,19 +85,19 @@ client.on('guildMemberAdd', async (member) => {
             .setColor(0x9B59B6)
             .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
             .setTimestamp();
-            
+
           await member.send({ embeds: [dmEmbed] });
         } catch (dmError) {
           console.error(`Could not send welcome DM to ${member.user.tag}:`, dmError);
           // Don't throw error for DM failures
         }
-        
+
         // Log to webhook
         try {
           const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
           const { WebhookClient } = require('discord.js');
           const webhook = new WebhookClient({ url: webhookUrl });
-          
+
           const logEmbed = new EmbedBuilder()
             .setTitle('New Member Joined')
             .setDescription(`${member.user.tag} has joined the server!`)
@@ -108,7 +108,7 @@ client.on('guildMemberAdd', async (member) => {
             )
             .setColor(0x9B59B6)
             .setTimestamp();
-            
+
           await webhook.send({ embeds: [logEmbed] });
         } catch (webhookError) {
           console.error('Error sending webhook:', webhookError);
@@ -128,13 +128,13 @@ async function registerCommands() {
     const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
     console.log('Loading command files...');
-    
+
     // Load each command and check for duplicate names
     for (const file of commandFiles) {
       try {
         console.log(`Processing file: ${file}`);
         const command = require(`./commands/${file}`);
-        
+
         if (command && command.data) {
           if (commandNames.has(command.data.name)) {
             console.error(`DUPLICATE DETECTED: Command name '${command.data.name}' in file ${file} is already registered.`);
@@ -450,24 +450,23 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
 
     // Log to webhook if configured
     try {
-      if (process.env.LOG_WEBHOOK_URL) {
-        const { WebhookClient } = require('discord.js');
-        const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
+      const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
+      const { WebhookClient } = require('discord.js');
+      const webhook = new WebhookClient({ url: webhookUrl });
 
-        const logEmbed = new EmbedBuilder()
-          .setTitle('New Ticket Created')
-          .setDescription(`A new ${ticketType} ticket has been created`)
-          .addFields(
-            { name: 'User', value: `${user.tag} (<@${user.id}>)`, inline: true },
-            { name: 'Ticket Type', value: ticketType.charAt(0).toUpperCase() + ticketType.slice(1), inline: true },
-            { name: 'Queue Position', value: `#${queuePosition}`, inline: true },
-            { name: 'Channel', value: `<#${ticketChannel.id}>`, inline: false }
-          )
-          .setColor(0x9B59B6)
-          .setTimestamp();
+      const logEmbed = new EmbedBuilder()
+        .setTitle('New Ticket Created')
+        .setDescription(`A new ${ticketType} ticket has been created`)
+        .addFields(
+          { name: 'User', value: `${user.tag} (<@${user.id}>)`, inline: true },
+          { name: 'Ticket Type', value: ticketType.charAt(0).toUpperCase() + ticketType.slice(1), inline: true },
+          { name: 'Queue Position', value: `#${queuePosition}`, inline: true },
+          { name: 'Channel', value: `<#${ticketChannel.id}>`, inline: false }
+        )
+        .setColor(0x9B59B6)
+        .setTimestamp();
 
-        await webhook.send({ embeds: [logEmbed] });
-      }
+      await webhook.send({ embeds: [logEmbed] });
     } catch (webhookError) {
       console.error('Error sending webhook:', webhookError);
     }
@@ -743,371 +742,4 @@ client.on('interactionCreate', async interaction => {
 
           // Create a transcript embed
           const closingEmbed = new EmbedBuilder()
-            .setTitle('<:purplearrow:1337594384631332885> **TICKET CLOSED**')
-            .setDescription('***This ticket is now closed and will be deleted in 5 seconds...***')
-            .addFields(
-              { name: '**Closed By**', value: `${interaction.user}`, inline: true },
-              { name: '**Ticket Type**', value: `\`${ticketType.charAt(0).toUpperCase() + ticketType.slice(1)}\``, inline: true }
-            )
-            .setColor(0x9B59B6)
-            .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
-            .setFooter({ text: 'ERLC Alting Support' })
-            .setTimestamp();
-
-          await channel.send({ embeds: [closingEmbed] });
-
-          // Log ticket closure to webhook
-          try {
-            if (process.env.LOG_WEBHOOK_URL) {
-              const { WebhookClient } = require('discord.js');
-              const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
-
-              // Collect up to 100 messages for the log
-              const messages = await channel.messages.fetch({ limit: 100 });
-              const messageLog = Array.from(messages.values())
-                .reverse()
-                .map(msg => {
-                  const time = new Date(msg.createdTimestamp).toLocaleString();
-                  const user = msg.author.tag;
-                  const content = msg.content || '[No text content]';
-                  const attachments = msg.attachments.size > 0 
-                    ? `\nAttachments: ${msg.attachments.map(a => a.url).join(', ')}` 
-                    : '';
-                  const embeds = msg.embeds.length > 0 ? '\n[Embed was sent]' : '';
-
-                  return `[${time}] ${user}: ${content}${attachments}${embeds}`;
-                })
-                .join('\n\n');
-
-              // Create a summary embed with ticket information
-              const logEmbed = new EmbedBuilder()
-                .setTitle('Ticket Closed')
-                .setDescription(`A ${ticketType} ticket has been closed`)
-                .addFields(
-                  { name: 'Ticket Creator', value: ticketCreatorId ? `<@${ticketCreatorId}>` : 'Unknown', inline: true },
-                  { name: 'Closed By', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
-                  { name: 'Ticket Type', value: ticketType.charAt(0).toUpperCase() + ticketType.slice(1), inline: true },
-                  { name: 'Channel Name', value: channel.name, inline: true },
-                  { name: 'Duration', value: ticketData?.createdAt ? 
-                      `${Math.round((new Date() - new Date(ticketData.createdAt)) / (1000 * 60))} minutes` : 
-                      'Unknown', inline: true }
-                )
-                .setColor(0x9B59B6)
-                .setTimestamp();
-
-              // If the log is too long for Discord's limits, split or truncate
-              if (messageLog.length > 3900) {
-                await webhook.send({ 
-                  embeds: [logEmbed],
-                  content: 'Ticket transcript (beginning):',
-                  files: [{
-                    attachment: Buffer.from(messageLog),
-                    name: `transcript-${channel.name}-${new Date().toISOString()}.txt`
-                  }]
-                });
-              } else {
-                logEmbed.addFields({ 
-                  name: 'Transcript', 
-                  value: '```' + messageLog.substring(0, 1000) + (messageLog.length > 1000 ? '...' : '') + '```'
-                });
-
-                await webhook.send({ embeds: [logEmbed] });
-              }
-            }
-          } catch (webhookError) {
-            console.error('Error sending webhook log:', webhookError);
-          }
-
-          // Delete the channel after 5 seconds
-          setTimeout(async () => {
-            try {
-              // Remove from active tickets map
-              if (global.activeTickets) {
-                global.activeTickets.delete(channel.id);
-              }
-
-              await channel.delete();
-
-              // Update queue positions after a ticket is closed
-              const guild = interaction.guild;
-              const openTickets = guild.channels.cache.filter(
-                ch => ch.type === ChannelType.GuildText && ch.name.includes(ticketType)
-              );
-
-              // Notify each remaining ticket about updated queue position
-              let position = 1;
-              openTickets.forEach(async (ch, index) => {
-                try {
-                  // Update the global queue position
-                  if (global.activeTickets && global.activeTickets.has(ch.id)) {
-                    const ticketInfo = global.activeTickets.get(ch.id);
-                    ticketInfo.queuePosition = position;
-                    global.activeTickets.set(ch.id, ticketInfo);
-                  }
-
-                  await ch.send({
-                    embeds: [
-                      new EmbedBuilder()
-                        .setTitle('<:purplearrow:1337594384631332885> **QUEUE UPDATE**')
-                        .setDescription(`***Your ticket queue position has been updated.***\n\n**Current Position: #${position}**`)
-                        .setColor(0x9B59B6)
-                        .setFooter({ text: 'ERLC Alting Support' })
-                    ]
-                  });
-                  position++;
-                } catch (err) {                  console.error('Error updating queue position for channel:', ch.name, err);
-                }
-              });
-            } catch (error) {
-              console.error('Error deleting channel:', error);
-            }
-          }, 5000);
-
-          await interaction.editReply('✅ Closing ticket...');
-
-        } catch (error) {
-          console.error('Error closing ticket:', error);
-          await interaction.editReply('❌ There was an error closing this ticket!');
-        }
-      }
-
-      // Cancel close ticket
-      else if (interaction.customId === 'cancel_close') {
-        await interaction.update({ content: '✅ Ticket closure cancelled.', embeds: [], components: [] });
-      }
-
-      // Handle product selection buttons
-      else if (interaction.customId.startsWith('product_')) {
-        await interaction.deferReply({ ephemeral: false });
-
-        try {
-          const productId = interaction.customId.replace('product_', '');
-          let productName = '';
-          let productPrice = '';
-
-          // Map product ID to name and price
-          switch (productId) {
-            case 'week_vip':
-              productName = 'Weekly VIP';
-              productPrice = '1,498';
-              break;
-            case 'month_vip':
-              productName = 'Monthly VIP';
-              productPrice = '4,500';
-              break;
-            case 'lifetime_vip':
-              productName = 'Lifetime VIP';
-              productPrice = '6,500';
-              break;
-            case 'refill':
-              productName = 'Refill';
-              productPrice = '100';
-              break;
-            case 'full_server':
-              productName = 'Full Server';
-              productPrice = '698';
-              break;
-            case '15_deal':
-              productName = '15 Bots';
-              productPrice = '198';
-              break;
-            case '40_deal':
-              productName = '40 Bots';
-              productPrice = '898';
-              break;
-            case '25_deal':
-              productName = '25 Bots';
-              productPrice = '398';
-              break;
-            case '30_deal':
-              productName = '30 Bots';
-              productPrice = '500';
-              break;
-            case '20_deal':
-              productName = '20 Bots';
-              productPrice = '300';
-              break;
-            case '10_deal':
-              productName = '10 Bots';
-              productPrice = '148';
-              break;
-            case 'imagealt_25':
-              productName = 'ImageAlt 25';
-              productPrice = '536';
-              break;
-            default:
-              productName = 'Unknown Product';
-              productPrice = 'Unknown';
-          }
-
-          // Create a payment embed with instructions
-          const paymentEmbed = new EmbedBuilder()
-            .setTitle('<:purplearrow:1337594384631332885> **PAYMENT DETAILS**')
-            .setDescription(`***You have selected: __${productName}__ - Price: __${productPrice}__***`)
-            .addFields(
-              { 
-                name: '**`Step 1️⃣ – Payment`**', 
-                value: '> **Payment Methods**\n> Please wait for a staff member to provide payment instructions.'
-              },
-              { 
-                name: '**`Step 2️⃣ – Confirmation`**', 
-                value: '> **Order Proof**\n> After payment, use `/orderproof` to submit your proof of purchase.'
-              },
-              { 
-                name: '**`Step 3️⃣ – Activation`**', 
-                value: '> **Key Generation**\n> Staff will generate your key and activate your service.'
-              },
-              {
-                name: '**<:PurpleLine:1336946927282950165> Important Information**',
-                value: '> • Your key will match your purchase duration\n> • The key is strictly confidential\n> • __***Must NOT be shared under any circumstances***__'
-              }
-            )
-            .setColor(0x9B59B6)
-            .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
-            .setFooter({ text: 'ERLC Alting Support' });
-
-          const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164';
-
-          await interaction.editReply({ 
-            content: `<@&${staffRoleId}> New order: **${productName}** - **${productPrice}**`,
-            embeds: [paymentEmbed]
-          });
-
-          // Log to webhook if configured
-          try {
-            if (process.env.LOG_WEBHOOK_URL) {
-              const { WebhookClient } = require('discord.js');
-              const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
-
-              const logEmbed = new EmbedBuilder()
-                .setTitle('Product Selected')
-                .setDescription(`A user has selected a product in a ticket`)
-                .addFields(
-                  { name: 'User', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
-                  { name: 'Product', value: productName, inline: true },
-                  { name: 'Price', value: productPrice, inline: true },
-                  { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: false }
-                )
-                .setColor(0x9B59B6)
-                .setTimestamp();
-
-              await webhook.send({ embeds: [logEmbed] });
-            }
-          } catch (webhookError) {
-            console.error('Error sending webhook:', webhookError);
-          }
-
-          // Send confirmation to the user's DM
-          try {
-            const user = interaction.user;
-            const dmEmbed = new EmbedBuilder()
-              .setTitle('🛒 Product Selected')
-              .setDescription(`You've selected: **${productName}** - Price: **${productPrice}**\n\nPlease return to your ticket and complete the payment process with staff assistance.`)
-              .setColor(0x9B59B6)
-              .setFooter({ text: 'ERLC Alting Support' });
-
-            await user.send({ embeds: [dmEmbed] });
-          } catch (error) {
-            console.error('Could not send DM to user:', error);
-            // No need to notify in channel as this is just a bonus feature
-          }
-
-        } catch (error) {
-          console.error('Error handling product selection:', error);
-          await interaction.editReply('❌ There was an error processing your product selection!');
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error handling interaction:', error);
-  }
-});
-
-// Generate a unique order ID
-function generateOrderId() {
-  return crypto.randomBytes(4).toString('hex').toUpperCase();
-}
-
-// Generate a unique key with optional expiration
-function generateKey(expirationDays = 365) {
-  const key = crypto.randomBytes(16).toString('hex').toUpperCase();
-  const expirationDate = new Date();
-  expirationDate.setDate(expirationDate.getDate() + expirationDays);
-
-  return {
-    key,
-    expirationDate,
-    used: false
-  };
-}
-
-// Generate a unique order proof key
-function generateOrderProofKey(robloxUsername, screenshotUrl, purchasedItems, duration) {
-  const key = crypto.randomBytes(16).toString('hex').toUpperCase();
-  orderProofKeys.set(key, {
-    robloxUsername,
-    screenshotUrl,
-    purchasedItems,
-    duration,
-  });
-  return key;
-}
-
-// Handle the /orderproof command
-client.on('messageCreate', async (message) => {
-  if (message.content.startsWith('/orderproof')) {
-    const args = message.content.slice(11).trim().split(/ +/);
-    const robloxUsername = args[0];
-    const screenshotUrl = args[1];
-    const purchasedItems = args.slice(2).join(' ');
-    const duration = args[args.length -1]; // Assuming duration is the last argument
-
-    if (!robloxUsername || !screenshotUrl || !duration) {
-      return message.reply('❌ Please provide Roblox username, screenshot URL, and duration.');
-    }
-
-    const key = generateOrderProofKey(robloxUsername, screenshotUrl, purchasedItems, duration);
-    const keyInfo = generateKey(parseInt(duration)); // Generate key with duration in days
-
-
-    const embed = new EmbedBuilder()
-      .setTitle('Order Proof Submitted')
-      .setDescription(`Your order proof has been submitted successfully. Your key is: **${keyInfo.key}** (Expires: ${keyInfo.expirationDate})`)
-      .setColor(0x9B59B6)
-      .setImage(screenshotUrl)
-      .setFooter({ text: 'ERLC Alting Support' });
-
-    message.reply({ embeds: [embed] });
-
-    // Log to webhook if configured
-    try {
-      if (process.env.LOG_WEBHOOK_URL) {
-        const { WebhookClient } = require('discord.js');
-        const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
-
-        const logEmbed = new EmbedBuilder()
-          .setTitle('Order Proof Submitted')
-          .setDescription(`Order proof submitted by ${message.author.tag} (<@${message.author.id}>)`)
-          .addFields(
-            { name: 'Roblox Username', value: robloxUsername, inline: true },
-            { name: 'Screenshot URL', value: screenshotUrl, inline: true },
-            { name: 'Purchased Items', value: purchasedItems, inline: true },
-            { name: 'Duration', value: duration, inline: true },
-            { name: 'Generated Key', value: `\`\`\`${keyInfo.key}\`\`\``, inline: false },
-            { name: 'Expiration Date', value: keyInfo.expirationDate.toLocaleString(), inline: true }
-          )
-          .setColor(0x9B59B6)
-          .setTimestamp();
-
-        await webhook.send({ embeds: [logEmbed] });
-      }
-    } catch (webhookError) {
-      console.error('Error sending webhook:', webhookError);
-    }
-
-  }
-});
-
-
-// Login to Discord
-client.login(process.env.DISCORD_TOKEN);
+            .setTitle('<:purplearrow:13375943' + messageLog.substring(0, 1000) + (messageLog.length > 1000 ? '...' : '') + '

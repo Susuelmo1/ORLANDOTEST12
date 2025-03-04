@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, Collection } = require('discord.js');
 const crypto = require('crypto');
 
@@ -176,7 +175,7 @@ module.exports = {
           { name: '**Duration**', value: `\`${packageDuration}\``, inline: true },
           { name: '**Expires On**', value: `\`${formattedExpiration}\``, inline: true },
           { name: '**Order ID**', value: `\`${orderId}\``, inline: false },
-          { name: '**Queue Position**', value: `\`${queueNumber}\``, inline: false },
+          { name: '**Queue Position**', value: `Your ticket is #\`${queueNumber}\` in queue. Estimated wait: \`${Math.ceil(queueNumber * 2)}\` minutes.`, inline: false },
           { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `A staff member will verify your proof and generate your key using \`/generatekey\`.` }
         )
         .setColor(0x9B59B6) 

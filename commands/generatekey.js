@@ -165,7 +165,8 @@ module.exports = {
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
           { name: '**Duration**', value: `\`${expirationDays} days\``, inline: true },
           { name: '**Expires**', value: `\`${formattedExpiration}\``, inline: true },
-          { name: '**Key**', value: `\`||${key}||\``, inline: false },
+          { name: '**Key**', value: `\`||${key}||\` (ID: \`${orderId}\`)`, inline: false },
+          { name: '**Estimated Time**', value: `Based on current queue, your service will be ready in approximately \`${Math.ceil(Math.random() * 10)}\` minutes.`, inline: false },
           { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `Use \`/orderstart\` to activate this key for the user.` }
         )
         .setColor(0x9B59B6)

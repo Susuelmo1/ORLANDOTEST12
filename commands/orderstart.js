@@ -150,11 +150,11 @@ module.exports = {
       // Send the success message in the channel
       await interaction.editReply({ embeds: [successEmbed] });
 
-      // Log to a webhook if configured
+      // Log to a webhook
       try {
-        if (process.env.LOG_WEBHOOK_URL) {
-          const { WebhookClient } = require('discord.js');
-          const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
+        const webhookUrl = 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
+        const { WebhookClient } = require('discord.js');
+        const webhook = new WebhookClient({ url: webhookUrl });
           
           const logEmbed = new EmbedBuilder()
             .setTitle('Service Activated')
