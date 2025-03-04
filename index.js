@@ -754,7 +754,7 @@ client.on('interactionCreate', async interaction => {
                     ]
                   });
                   position++;
-                } catch (err) {
+                } catch (err{
                   console.error('Error updating queue position for channel:', ch.name, err);
                 }
               });
@@ -808,27 +808,27 @@ client.on('interactionCreate', async interaction => {
               productPrice = '698';
               break;
             case '15_deal':
-              productName = '15 Deal';
+              productName = '15 Bots';
               productPrice = '198';
               break;
             case '40_deal':
-              productName = '40 Deal';
+              productName = '40 Bots';
               productPrice = '898';
               break;
             case '25_deal':
-              productName = '25 Deal';
+              productName = '25 Bots';
               productPrice = '398';
               break;
             case '30_deal':
-              productName = '30 Deal';
+              productName = '30 Bots';
               productPrice = '500';
               break;
             case '20_deal':
-              productName = '20 Deal';
+              productName = '20 Bots';
               productPrice = '300';
               break;
             case '10_deal':
-              productName = '10 Deal';
+              productName = '10 Bots';
               productPrice = '148';
               break;
             case 'imagealt_25':
@@ -957,30 +957,57 @@ function generateOrderProofKey(robloxUsername, screenshotUrl, purchasedItems, du
 client.on('messageCreate', async (message) => {
   if (message.content.startsWith('/orderproof')) {
     const args = message.content.slice(11).trim().split(/ +/);
-    const targetUsername = args[0].replace('<@!', '').replace('>', '');
-    const targetUser = await message.guild.members.fetch(targetUsername);
+    const robloxUsername = args[0];
+    const screenshotUrl = args[1];
+    const purchasedItems = args.slice(2).join(' ');
+    const duration = args[args.length -1]; // Assuming duration is the last argument
 
-    if (!targetUser) {
-      return message.reply(`❌ User not found.`);
+    if (!robloxUsername || !screenshotUrl || !duration) {
+      return message.reply('❌ Please provide Roblox username, screenshot URL, and duration.');
     }
 
-    const orderProofKey = orderProofKeys.get(targetUser.id);
+    const key = generateOrderProofKey(robloxUsername, screenshotUrl, purchasedItems, duration);
+    const keyInfo = generateKey(parseInt(duration)); // Generate key with duration in days
 
-    if (orderProofKey) {
-      const orderProofInfo = orderProofKeys.get(orderProofKey);
-      const embed = new EmbedBuilder()
-        .setTitle('Order Proof')
-        .setDescription(`**Roblox Username:** ${orderProofInfo.robloxUsername}\n**Screenshot:** ${orderProofInfo.screenshotUrl}\n**Purchased Items:** ${orderProofInfo.purchasedItems}\n**Duration:** ${orderProofInfo.duration}`)
-        .setColor(0x9B59B6)
-        .setImage(orderProofInfo.screenshotUrl)
-        .setFooter({ text: 'ERLC Alting Support' });
 
-      return message.reply({ embeds: [embed] });
-    } else {
-      return message.reply(`❌ No order proof found for ${targetUser}.`);
+    const embed = new EmbedBuilder()
+      .setTitle('Order Proof Submitted')
+      .setDescription(`Your order proof has been submitted successfully. Your key is: **${keyInfo.key}** (Expires: ${keyInfo.expirationDate})`)
+      .setColor(0x9B59B6)
+      .setImage(screenshotUrl)
+      .setFooter({ text: 'ERLC Alting Support' });
+
+    message.reply({ embeds: [embed] });
+
+    // Log to webhook if configured
+    try {
+      if (process.env.LOG_WEBHOOK_URL) {
+        const { WebhookClient } = require('discord.js');
+        const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
+
+        const logEmbed = new EmbedBuilder()
+          .setTitle('Order Proof Submitted')
+          .setDescription(`Order proof submitted by ${message.author.tag} (<@${message.author.id}>)`)
+          .addFields(
+            { name: 'Roblox Username', value: robloxUsername, inline: true },
+            { name: 'Screenshot URL', value: screenshotUrl, inline: true },
+            { name: 'Purchased Items', value: purchasedItems, inline: true },
+            { name: 'Duration', value: duration, inline: true },
+            { name: 'Generated Key', value: `\`\`\`${keyInfo.key}\`\`\``, inline: false },
+            { name: 'Expiration Date', value: keyInfo.expirationDate.toLocaleString(), inline: true }
+          )
+          .setColor(0x9B59B6)
+          .setTimestamp();
+
+        await webhook.send({ embeds: [logEmbed] });
+      }
+    } catch (webhookError) {
+      console.error('Error sending webhook:', webhookError);
     }
+
   }
 });
+
 
 // Login to Discord
 client.login(process.env.DISCORD_TOKEN);

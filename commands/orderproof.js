@@ -119,6 +119,18 @@ module.exports = {
         client.orderProofs = new Map();
       }
 
+      // Store order details with expiration date
+      const expirationDate = new Date();
+      if (packageDuration === 'Lifetime') {
+        expirationDate.setFullYear(expirationDate.getFullYear() + 100); // Essentially lifetime
+      } else if (packageDuration === '30 days') {
+        expirationDate.setDate(expirationDate.getDate() + 30);
+      } else if (packageDuration === '7 days') {
+        expirationDate.setDate(expirationDate.getDate() + 7);
+      } else {
+        expirationDate.setDate(expirationDate.getDate() + 1); // Default to 1 day
+      }
+
       client.orderProofs.set(orderId, {
         userId: interaction.user.id,
         robloxUsername,
@@ -126,7 +138,8 @@ module.exports = {
         package: packageName,
         duration: packageDuration,
         timestamp: new Date(),
-        queueNumber
+        queueNumber,
+        expirationDate: expirationDate
       });
 
       // Create a professional embed for the order proof
@@ -139,7 +152,7 @@ module.exports = {
           { name: '**Duration**', value: `\`${packageDuration}\``, inline: true },
           { name: '**Order ID**', value: `\`${orderId}\``, inline: false },
           { name: '**Queue Position**', value: `\`${queueNumber}\``, inline: false },
-          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `A staff member will verify your proof and provide your key.  Type /PAYMENT when ready to pay.` }
+          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `A staff member will verify your proof and generate your key using \`/generatekey\`.` }
         )
         .setColor(0x9B59B6) 
         .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
@@ -190,12 +203,4 @@ module.exports = {
 };
 
 
-// /PAYMENT command
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('payment')
-    .setDescription('Request payment instructions'),
-  async execute(interaction) {
-    await interaction.reply({ content: 'Please wait for a staff member to provide payment instructions.', ephemeral: true });
-  }
-};
+// Note: Payment command is defined in its own file (payment.js)
