@@ -742,4 +742,4 @@ client.on('interactionCreate', async interaction => {
 
           // Create a transcript embed
           const closingEmbed = new EmbedBuilder()
-            .setTitle('<:purplearrow:13375943' + messageLog.substring(0, 1000) + (messageLog.length > 1000 ? '...' : '') + '
+            .setTitle('<:purplearrow:1337594384631332885> **TICKET CLOSED**')

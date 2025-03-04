@@ -18,7 +18,11 @@ module.exports = {
     .addStringOption(option =>
       option.setName('reason')
         .setDescription('Reason for your rating')
-        .setRequired(true)),
+        .setRequired(true))
+    .addAttachmentOption(option =>
+      option.setName('screenshot')
+        .setDescription('Screenshot of your service (optional)')
+        .setRequired(false)),
 
   async execute(interaction, client) {
     await interaction.deferReply();
@@ -27,6 +31,7 @@ module.exports = {
       const username = interaction.options.getString('username');
       const stars = interaction.options.getInteger('stars');
       const reason = interaction.options.getString('reason');
+      const screenshot = interaction.options.getAttachment('screenshot');
 
       // Initialize vouches if not exist
       if (!global.vouches) {
@@ -60,6 +65,11 @@ module.exports = {
         )
         .setColor(0x9B59B6)
         .setTimestamp();
+      
+      // Add screenshot if provided
+      if (screenshot && screenshot.contentType && screenshot.contentType.startsWith('image/')) {
+        vouchEmbed.setImage(screenshot.url);
+      }
 
       // Send to both the interaction channel and potentially a designated vouch channel
       const replyMessage = await interaction.editReply({ embeds: [vouchEmbed] });
