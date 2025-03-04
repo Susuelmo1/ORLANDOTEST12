@@ -743,3 +743,6 @@ client.on('interactionCreate', async interaction => {
           // Create a transcript embed
           const closingEmbed = new EmbedBuilder()
             .setTitle('<:purplearrow:1337594384631332885> **TICKET CLOSED**')
+            .setDescription(`This ticket has been closed by ${interaction.user.tag}`)
+            .setColor(0x9B59B6)
+            .setTimestamp()
