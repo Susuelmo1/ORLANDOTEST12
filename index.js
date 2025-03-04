@@ -746,3 +746,23 @@ client.on('interactionCreate', async interaction => {
             .setDescription(`This ticket has been closed by ${interaction.user.tag}`)
             .setColor(0x9B59B6)
             .setTimestamp();
+
+          // Log ticket closing
+          await channel.send({ embeds: [closingEmbed] });
+          
+          // Add a delay before deleting the channel
+          await interaction.editReply('✅ Ticket will be closed in 5 seconds.');
+          
+          // Remove from active tickets map
+          if (global.activeTickets && global.activeTickets.has(channel.id)) {
+            global.activeTickets.delete(channel.id);
+          }
+          
+          // Delete the channel after 5 seconds
+          setTimeout(async () => {
+            try {
+              await channel.delete();
+            } catch (deleteError) {
+              console.error('Error deleting channel:', deleteError);
+            }
+          }, 5000);
