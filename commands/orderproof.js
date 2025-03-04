@@ -1,3 +1,4 @@
+
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, Collection } = require('discord.js');
 const crypto = require('crypto');
 
@@ -58,55 +59,68 @@ module.exports = {
       // Get the package details
       let packageName = '';
       let packageDuration = '';
+      let expirationDays = 1;
 
       switch (package) {
         case '10_bots':
           packageName = '10 Bots';
           packageDuration = '1 day';
+          expirationDays = 1;
           break;
         case '15_bots':
           packageName = '15 Bots';
           packageDuration = '1 day';
+          expirationDays = 1;
           break;
         case '20_bots':
           packageName = '20 Bots';
           packageDuration = '1 day';
+          expirationDays = 1;
           break;
         case '25_bots':
           packageName = '25 Bots';
           packageDuration = '1 day';
+          expirationDays = 1;
           break;
         case '30_bots':
           packageName = '30 Bots';
           packageDuration = '1 day';
+          expirationDays = 1;
           break;
         case '40_bots':
           packageName = '40 Bots';
           packageDuration = '1 day';
+          expirationDays = 1;
           break;
         case 'full_server':
           packageName = 'Full Server';
           packageDuration = '1 day';
+          expirationDays = 1;
           break;
         case 'refill':
           packageName = 'Refill';
           packageDuration = '1 day';
+          expirationDays = 1;
           break;
         case 'week_vip':
           packageName = 'Week VIP';
           packageDuration = '7 days';
+          expirationDays = 7;
           break;
         case 'month_vip':
           packageName = 'Month VIP';
           packageDuration = '30 days';
+          expirationDays = 30;
           break;
         case 'lifetime_vip':
           packageName = 'Lifetime VIP';
           packageDuration = 'Lifetime';
+          expirationDays = 36500; // ~100 years
           break;
         default:
           packageName = 'Unknown Package';
           packageDuration = 'Unknown';
+          expirationDays = 1;
       }
 
       // Generate a unique order ID
@@ -133,6 +147,13 @@ module.exports = {
         expirationDate.setDate(expirationDate.getDate() + 1); // Default to 1 day
       }
 
+      // Format expiration date for display
+      const formattedExpiration = expirationDate.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
       client.orderProofs.set(orderId, {
         userId: interaction.user.id,
         robloxUsername,
@@ -141,7 +162,8 @@ module.exports = {
         duration: packageDuration,
         timestamp: new Date(),
         queueNumber,
-        expirationDate: expirationDate
+        expirationDate: expirationDate,
+        expirationDays: expirationDays
       });
 
       // Create a professional embed for the order proof
@@ -152,14 +174,13 @@ module.exports = {
           { name: '**Roblox Username**', value: `\`${robloxUsername}\``, inline: true },
           { name: '**Package**', value: `\`${packageName}\``, inline: true },
           { name: '**Duration**', value: `\`${packageDuration}\``, inline: true },
+          { name: '**Expires On**', value: `\`${formattedExpiration}\``, inline: true },
           { name: '**Order ID**', value: `\`${orderId}\``, inline: false },
           { name: '**Queue Position**', value: `\`${queueNumber}\``, inline: false },
           { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `A staff member will verify your proof and generate your key using \`/generatekey\`.` }
         )
         .setColor(0x9B59B6) 
-        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
         .setThumbnail(screenshot.url)
-        .setFooter({ text: 'ERLC Alting Support' })
         .setTimestamp();
 
       // Ping staff for attention
@@ -170,29 +191,30 @@ module.exports = {
         embeds: [orderProofEmbed]
       });
 
-      // Log to a webhook if configured
+      // Log to a webhook
       try {
-        if (process.env.LOG_WEBHOOK_URL) {
-          const { WebhookClient } = require('discord.js');
-          const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
+        const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
+        const { WebhookClient } = require('discord.js');
+        const webhook = new WebhookClient({ url: webhookUrl });
 
-          const logEmbed = new EmbedBuilder()
-            .setTitle('New Order Proof Submitted')
-            .setDescription(`Order proof submitted by ${interaction.user.tag}`)
-            .addFields(
-              { name: 'User', value: `<@${interaction.user.id}>`, inline: true },
-              { name: 'Roblox Username', value: robloxUsername, inline: true },
-              { name: 'Package', value: packageName, inline: true },
-              { name: 'Order ID', value: orderId, inline: false },
-              { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: false },
-              { name: 'Queue Position', value: `${queueNumber}`, inline: false}
-            )
-            .setColor(0x9B59B6)
-            .setThumbnail(screenshot.url)
-            .setTimestamp();
+        const logEmbed = new EmbedBuilder()
+          .setTitle('New Order Proof Submitted')
+          .setDescription(`Order proof submitted by ${interaction.user.tag}`)
+          .addFields(
+            { name: 'User', value: `<@${interaction.user.id}>`, inline: true },
+            { name: 'Roblox Username', value: robloxUsername, inline: true },
+            { name: 'Package', value: packageName, inline: true },
+            { name: 'Duration', value: packageDuration, inline: true },
+            { name: 'Expires On', value: formattedExpiration, inline: true },
+            { name: 'Order ID', value: orderId, inline: false },
+            { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: false },
+            { name: 'Queue Position', value: `${queueNumber}`, inline: false}
+          )
+          .setColor(0x9B59B6)
+          .setThumbnail(screenshot.url)
+          .setTimestamp();
 
-          await webhook.send({ embeds: [logEmbed] });
-        }
+        await webhook.send({ embeds: [logEmbed] });
       } catch (webhookError) {
         console.error('Error sending webhook:', webhookError);
       }
@@ -203,6 +225,3 @@ module.exports = {
     }
   }
 };
-
-
-// Note: Payment command is defined in its own file (payment.js)

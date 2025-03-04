@@ -143,7 +143,6 @@ module.exports = {
             { name: '**Messages Deleted**', value: `\`${days} days\``, inline: true }
           )
           .setColor(0x9B59B6)
-          .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
           .setFooter({ text: 'ERLC Alting Support' })
           .setTimestamp();
 
@@ -151,24 +150,23 @@ module.exports = {
 
         // Log to a webhook if configured
         try {
-          if (process.env.LOG_WEBHOOK_URL) {
-            const { WebhookClient } = require('discord.js');
-            const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
-            
-            const logEmbed = new EmbedBuilder()
-              .setTitle('User Softbanned')
-              .setDescription(`A user has been softbanned from the server.`)
-              .addFields(
-                { name: 'User', value: `${user.tag} (${user.id})`, inline: true },
-                { name: 'Moderator', value: `${interaction.user.tag} (${interaction.user.id})`, inline: true },
-                { name: 'Reason', value: reason, inline: false },
-                { name: 'Messages Deleted', value: `${days} days`, inline: true }
-              )
-              .setColor(0x9B59B6)
-              .setTimestamp();
+          const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
+          const { WebhookClient } = require('discord.js');
+          const webhook = new WebhookClient({ url: webhookUrl });
+          
+          const logEmbed = new EmbedBuilder()
+            .setTitle('User Softbanned')
+            .setDescription(`A user has been softbanned from the server.`)
+            .addFields(
+              { name: 'User', value: `${user.tag} (${user.id})`, inline: true },
+              { name: 'Moderator', value: `${interaction.user.tag} (${interaction.user.id})`, inline: true },
+              { name: 'Reason', value: reason, inline: false },
+              { name: 'Messages Deleted', value: `${days} days`, inline: true }
+            )
+            .setColor(0x9B59B6)
+            .setTimestamp();
               
-            await webhook.send({ embeds: [logEmbed] });
-          }
+          await webhook.send({ embeds: [logEmbed] });
         } catch (webhookError) {
           console.error('Error sending webhook:', webhookError);
         }

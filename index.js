@@ -50,6 +50,76 @@ client.once('ready', () => {
   registerCommands();
 });
 
+// Event listener for when a new member joins
+client.on('guildMemberAdd', async (member) => {
+  try {
+    if (global.config?.welcome?.enabled) {
+      const welcomeChannelId = global.config.welcome.channelId || '1337553581250838639';
+      const rulesChannelId = global.config.welcome.rulesChannelId || '1337591756161683466';
+      
+      const welcomeChannel = await member.guild.channels.fetch(welcomeChannelId).catch(() => null);
+      
+      if (welcomeChannel) {
+        // Create welcome embed
+        const welcomeEmbed = new EmbedBuilder()
+          .setTitle('<:purplearrow:1337594384631332885> **WELCOME**')
+          .setDescription(`**Welcome to ${member.guild.name}, ${member}! We hope you enjoy your stay!**\nWe are now at **${member.guild.memberCount}** members.`)
+          .addFields(
+            { name: '**📋 Regulations**', value: `Make sure to read our rules in <#${rulesChannelId}> to avoid any issues.` }
+          )
+          .setColor(0x9B59B6)
+          .setTimestamp();
+        
+        await welcomeChannel.send({ embeds: [welcomeEmbed] });
+        
+        // Send a DM to the new member with more information
+        try {
+          const dmEmbed = new EmbedBuilder()
+            .setTitle(`Welcome to ${member.guild.name}!`)
+            .setDescription(`Hey ${member.user.username}, thanks for joining our server!`)
+            .addFields(
+              { name: '📋 Rules & Information', value: `Please make sure to read our rules in <#${rulesChannelId}>.` },
+              { name: '🎟️ Support', value: 'If you need any assistance, feel free to open a ticket in our support channel.' },
+              { name: '🛒 Services', value: 'Check out our services by opening a ticket in the order category.' }
+            )
+            .setColor(0x9B59B6)
+            .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
+            .setTimestamp();
+            
+          await member.send({ embeds: [dmEmbed] });
+        } catch (dmError) {
+          console.error(`Could not send welcome DM to ${member.user.tag}:`, dmError);
+          // Don't throw error for DM failures
+        }
+        
+        // Log to webhook
+        try {
+          const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
+          const { WebhookClient } = require('discord.js');
+          const webhook = new WebhookClient({ url: webhookUrl });
+          
+          const logEmbed = new EmbedBuilder()
+            .setTitle('New Member Joined')
+            .setDescription(`${member.user.tag} has joined the server!`)
+            .addFields(
+              { name: 'User', value: `<@${member.user.id}>`, inline: true },
+              { name: 'User ID', value: member.user.id, inline: true },
+              { name: 'Account Created', value: `<t:${Math.floor(member.user.createdAt.getTime() / 1000)}:R>`, inline: true }
+            )
+            .setColor(0x9B59B6)
+            .setTimestamp();
+            
+          await webhook.send({ embeds: [logEmbed] });
+        } catch (webhookError) {
+          console.error('Error sending webhook:', webhookError);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error with welcome message:', error);
+  }
+});
+
 // Register slash commands
 async function registerCommands() {
   try {
@@ -100,9 +170,30 @@ async function registerCommands() {
   }
 }
 
+// Global configurations
+if (!global.config) {
+  global.config = {
+    welcome: {
+      enabled: true,
+      channelId: '1337553581250838639',
+      rulesChannelId: '1337591756161683466'
+    }
+  };
+}
+
 // Track active tickets globally
 if (!global.activeTickets) {
   global.activeTickets = new Map();
+}
+
+// Initialize user order history
+if (!global.userOrderHistory) {
+  global.userOrderHistory = new Map();
+}
+
+// Initialize vouches
+if (!global.vouches) {
+  global.vouches = [];
 }
 
 // Function to create a ticket channel
