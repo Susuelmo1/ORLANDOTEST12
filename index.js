@@ -750,7 +750,7 @@ client.on('interactionCreate', async interaction => {
                         .setTitle('<:purplearrow:1337594384631332885> **QUEUE UPDATE**')
                         .setDescription(`***Your ticket queue position has been updated.***\n\n**Current Position: #${position}**`)
                         .setColor(0x9B59B6)
-                        .setFooter{ text: 'ERLC Alting Support' })
+                        .setFooter({ text: 'ERLC Alting Support' })
                     ]
                   });
                   position++;
