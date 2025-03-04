@@ -1,3 +1,4 @@
+
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
@@ -15,6 +16,10 @@ module.exports = {
     .addUserOption(option => 
       option.setName('user')
         .setDescription('User to activate the service for')
+        .setRequired(true))
+    .addIntegerOption(option =>
+      option.setName('time')
+        .setDescription('Duration in days (e.g., 7, 30, 365 for lifetime)')
         .setRequired(true)),
 
   async execute(interaction, client) {
@@ -34,13 +39,14 @@ module.exports = {
       const key = interaction.options.getString('key');
       const orderId = interaction.options.getString('orderid');
       const targetUser = interaction.options.getUser('user');
+      const time = interaction.options.getInteger('time');
 
       // Check if the order ID exists
       if (!client.orderProofs || !client.orderProofs.has(orderId)) {
         return interaction.editReply(`❌ Order ID \`${orderId}\` not found!`);
       }
 
-      // Check if the key exists and is valid (in a real system, this would query a database)
+      // Check if the key exists and is valid
       if (!global.generatedKeys || !global.generatedKeys.has(key)) {
         return interaction.editReply('❌ Invalid key. Please check the key and try again.');
       }
@@ -55,10 +61,31 @@ module.exports = {
       // Get order details
       const orderDetails = client.orderProofs.get(orderId);
 
+      // Calculate expiration date based on time parameter
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + time);
+      const formattedExpiration = expirationDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      // Set duration text based on time
+      let durationText = "";
+      if (time >= 365) {
+        durationText = "Lifetime";
+      } else if (time >= 30) {
+        durationText = `${Math.floor(time / 30)} Month(s)`;
+      } else {
+        durationText = `${time} Day(s)`;
+      }
+
       // Mark key as used
       keyDetails.used = true;
       keyDetails.activatedBy = interaction.user.id;
       keyDetails.activatedAt = new Date();
+      keyDetails.expiresAt = expirationDate;
+      keyDetails.duration = durationText;
       global.generatedKeys.set(key, keyDetails);
 
       // Create success embed with purple theme
@@ -69,6 +96,8 @@ module.exports = {
           { name: '**Key Used**', value: `\`${key}\``, inline: true },
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
           { name: '**Package**', value: `\`${keyDetails.package}\``, inline: true },
+          { name: '**Duration**', value: `\`${durationText}\``, inline: true },
+          { name: '**Expires On**', value: `\`${formattedExpiration}\``, inline: true },
           { name: '**Activated By**', value: `${interaction.user}`, inline: true },
           { name: '**Roblox Username**', value: `\`${orderDetails.robloxUsername}\``, inline: true },
           { name: '**Status**', value: '✅ **Active**', inline: true }
@@ -96,11 +125,11 @@ module.exports = {
         if (keyDetails.package.includes('VIP')) {
           let vipRoleId = '';
 
-          if (keyDetails.package === 'Lifetime VIP') {
+          if (keyDetails.package === 'Lifetime VIP' || time >= 365) {
             vipRoleId = '1336741718531248220';
-          } else if (keyDetails.package === 'Month VIP') {
+          } else if (keyDetails.package === 'Month VIP' || time >= 30) {
             vipRoleId = '1336741762491875430';
-          } else if (keyDetails.package === 'Week VIP') {
+          } else if (keyDetails.package === 'Week VIP' || time <= 7) {
             vipRoleId = '1336741795454783561';
           }
 
@@ -132,6 +161,8 @@ module.exports = {
           .setDescription(`***Your ${keyDetails.package} service has been activated!***`)
           .addFields(
             { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
+            { name: '**Duration**', value: `\`${durationText}\``, inline: true },
+            { name: '**Expires On**', value: `\`${formattedExpiration}\``, inline: true },
             { name: '**Activated On**', value: `\`${new Date().toLocaleDateString()}\``, inline: true },
             { name: '**<:PurpleLine:1336946927282950165> Important**', value: '__***Keep your key secure and never share it with others!***__\nIf you need help, please open a support ticket in our server.' }
           )
@@ -155,24 +186,47 @@ module.exports = {
         const { WebhookClient } = require('discord.js');
         const webhook = new WebhookClient({ url: webhookUrl });
 
-          const logEmbed = new EmbedBuilder()
-            .setTitle('Service Activated')
-            .setDescription(`A service has been activated by ${interaction.user.tag}`)
-            .addFields(
-              { name: 'Activated For', value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },
-              { name: 'Package', value: keyDetails.package, inline: true },
-              { name: 'Order ID', value: orderId, inline: true },
-              { name: 'Roblox Username', value: orderDetails.robloxUsername, inline: true },
-              { name: 'Key', value: `||${key}||`, inline: false },
-              { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: false }
-            )
-            .setColor(0x9B59B6)
-            .setTimestamp();
+        const logEmbed = new EmbedBuilder()
+          .setTitle('Service Activated')
+          .setDescription(`A service has been activated by ${interaction.user.tag}`)
+          .addFields(
+            { name: 'Activated For', value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },
+            { name: 'Package', value: keyDetails.package, inline: true },
+            { name: 'Duration', value: durationText, inline: true },
+            { name: 'Expires On', value: formattedExpiration, inline: true },
+            { name: 'Order ID', value: orderId, inline: true },
+            { name: 'Roblox Username', value: orderDetails.robloxUsername, inline: true },
+            { name: 'Key', value: `||${key}||`, inline: false },
+            { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: false }
+          )
+          .setColor(0x9B59B6)
+          .setTimestamp();
 
-          await webhook.send({ embeds: [logEmbed] });
-        } catch (webhookError) {
+        await webhook.send({ embeds: [logEmbed] });
+      } catch (webhookError) {
         console.error('Error sending webhook:', webhookError);
       }
+
+      // Store in order history if needed
+      if (!global.userOrderHistory) {
+        global.userOrderHistory = new Map();
+      }
+      
+      if (!global.userOrderHistory.has(targetUser.id)) {
+        global.userOrderHistory.set(targetUser.id, []);
+      }
+      
+      const orderHistoryEntry = {
+        orderId: orderId,
+        package: keyDetails.package,
+        key: key,
+        generatedAt: new Date(),
+        expirationDate: expirationDate,
+        duration: durationText,
+        generatedBy: interaction.user.id
+      };
+      
+      global.userOrderHistory.get(targetUser.id).push(orderHistoryEntry);
 
     } catch (error) {
       console.error('Error activating service:', error);
