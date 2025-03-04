@@ -26,7 +26,8 @@ module.exports = {
           }
         )
         .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
-        .setFooter({ text: 'ERLC Alting Payment Links' });
+        .setFooter({ text: 'ERLC Alting Payment Links' })
+        .setTimestamp();
 
       await interaction.reply({ embeds: [embed] });
     } catch (error) {

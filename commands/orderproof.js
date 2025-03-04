@@ -1,20 +1,23 @@
-
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, Collection } = require('discord.js');
 const crypto = require('crypto');
+
+// Queue system
+const queue = new Collection();
+let nextQueueNumber = 50;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('orderproof')
     .setDescription('Submit proof of your order')
-    .addStringOption(option => 
+    .addStringOption(option =>
       option.setName('roblox_username')
         .setDescription('Your Roblox username')
         .setRequired(true))
-    .addAttachmentOption(option => 
+    .addAttachmentOption(option =>
       option.setName('screenshot')
         .setDescription('Screenshot of your purchase proof')
         .setRequired(true))
-    .addStringOption(option => 
+    .addStringOption(option =>
       option.setName('package')
         .setDescription('The package you purchased')
         .setRequired(true)
@@ -44,7 +47,7 @@ module.exports = {
       const robloxUsername = interaction.options.getString('roblox_username');
       const screenshot = interaction.options.getAttachment('screenshot');
       const package = interaction.options.getString('package');
-      
+
       // Validate the screenshot
       if (!screenshot.contentType.startsWith('image/')) {
         return interaction.editReply('❌ Please provide a valid image for your screenshot!');
@@ -53,7 +56,7 @@ module.exports = {
       // Get the package details
       let packageName = '';
       let packageDuration = '';
-      
+
       switch (package) {
         case '10_bots':
           packageName = '10 Bots';
@@ -107,6 +110,10 @@ module.exports = {
       // Generate a unique order ID
       const orderId = crypto.randomBytes(4).toString('hex').toUpperCase();
 
+      // Add to queue
+      const queueNumber = nextQueueNumber++;
+      queue.set(interaction.user.id, { robloxUsername, queueNumber });
+
       // Store the order proof details for later use
       if (!client.orderProofs) {
         client.orderProofs = new Map();
@@ -118,7 +125,8 @@ module.exports = {
         screenshotUrl: screenshot.url,
         package: packageName,
         duration: packageDuration,
-        timestamp: new Date()
+        timestamp: new Date(),
+        queueNumber
       });
 
       // Create a professional embed for the order proof
@@ -130,9 +138,10 @@ module.exports = {
           { name: '**Package**', value: `\`${packageName}\``, inline: true },
           { name: '**Duration**', value: `\`${packageDuration}\``, inline: true },
           { name: '**Order ID**', value: `\`${orderId}\``, inline: false },
-          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `A staff member will verify your proof and provide your key.` }
+          { name: '**Queue Position**', value: `\`${queueNumber}\``, inline: false },
+          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `A staff member will verify your proof and provide your key.  Type /PAYMENT when ready to pay.` }
         )
-        .setColor(0x9B59B6) // Purple color
+        .setColor(0x9B59B6) 
         .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
         .setThumbnail(screenshot.url)
         .setFooter({ text: 'ERLC Alting Support' })
@@ -140,8 +149,8 @@ module.exports = {
 
       // Ping staff for attention
       const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164';
-      
-      await interaction.editReply({ 
+
+      await interaction.editReply({
         content: `<@&${staffRoleId}> New order proof submitted! Order ID: \`${orderId}\``,
         embeds: [orderProofEmbed]
       });
@@ -151,7 +160,7 @@ module.exports = {
         if (process.env.LOG_WEBHOOK_URL) {
           const { WebhookClient } = require('discord.js');
           const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
-          
+
           const logEmbed = new EmbedBuilder()
             .setTitle('New Order Proof Submitted')
             .setDescription(`Order proof submitted by ${interaction.user.tag}`)
@@ -160,12 +169,13 @@ module.exports = {
               { name: 'Roblox Username', value: robloxUsername, inline: true },
               { name: 'Package', value: packageName, inline: true },
               { name: 'Order ID', value: orderId, inline: false },
-              { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: false }
+              { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: false },
+              { name: 'Queue Position', value: `${queueNumber}`, inline: false}
             )
             .setColor(0x9B59B6)
             .setThumbnail(screenshot.url)
             .setTimestamp();
-            
+
           await webhook.send({ embeds: [logEmbed] });
         }
       } catch (webhookError) {
@@ -176,5 +186,16 @@ module.exports = {
       console.error('Error with orderproof command:', error);
       await interaction.editReply('❌ There was an error submitting your order proof! Please try again or contact a staff member.');
     }
+  }
+};
+
+
+// /PAYMENT command
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('payment')
+    .setDescription('Request payment instructions'),
+  async execute(interaction) {
+    await interaction.reply({ content: 'Please wait for a staff member to provide payment instructions.', ephemeral: true });
   }
 };

@@ -235,6 +235,10 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
           {
             name: '**<:PurpleLine:1336946927282950165> Security Warning**',
             value: '> __***Your key is personal and must not be shared under any circumstances.***__'
+          },
+          {
+            name: '**`Step 1️⃣ – Payment`**',
+            value: '> **Payment Methods**\n> Please wait for a staff member to provide payment instructions.\n> **TYPE `/PAYMENT` FOR PAYMENT LINKS**'
           }
         )
         .setColor(0x9B59B6)
@@ -284,7 +288,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
             .setLabel('20 Bots')
             .setStyle(ButtonStyle.Secondary)
         );
-        
+
       const orderButtons2 = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
@@ -300,7 +304,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
             .setLabel('40 Bots')
             .setStyle(ButtonStyle.Secondary)
         );
-        
+
       const orderButtons3 = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
@@ -334,10 +338,10 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
         byUser: new Map()
       };
     }
-    
+
     global.ticketStats.total++;
     global.ticketStats.byType[ticketType]++;
-    
+
     const userStats = global.ticketStats.byUser.get(user.id) || { total: 0, types: {} };
     userStats.total++;
     userStats.types[ticketType] = (userStats.types[ticketType] || 0) + 1;
@@ -348,7 +352,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
       if (process.env.LOG_WEBHOOK_URL) {
         const { WebhookClient } = require('discord.js');
         const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
-        
+
         const logEmbed = new EmbedBuilder()
           .setTitle('New Ticket Created')
           .setDescription(`A new ${ticketType} ticket has been created`)
@@ -360,7 +364,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
           )
           .setColor(0x9B59B6)
           .setTimestamp();
-          
+
         await webhook.send({ embeds: [logEmbed] });
       }
     } catch (webhookError) {
@@ -396,7 +400,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
       // Reply in the server
       await interaction.editReply(`✅ Your ticket has been created: ${ticketChannel}`);
     }
-    
+
     // Store the ticket in global active tickets map
     global.activeTickets.set(ticketChannel.id, {
       userId: user.id,
@@ -404,7 +408,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
       createdAt: new Date(),
       queuePosition: queuePosition
     });
-    
+
   } catch (error) {
     console.error('Error creating ticket channel:', error);
     await interaction.editReply('❌ There was an error creating your ticket. Please try again later.');
@@ -428,7 +432,7 @@ client.on('interactionCreate', async interaction => {
         // Owner-only commands
         if (['ban', 'kick', 'dmall'].includes(interaction.commandName)) {
           if (!ownersIds.includes(interaction.user.id)) {
-            return interaction.reply({ content: '❌ You do not have permission to use this command!', ephemeral: true });
+            return interaction.reply({ content: '❌ You do not have permission to use this command!', flags: { ephemeral: true } });
           }
         }
 
@@ -439,7 +443,7 @@ client.on('interactionCreate', async interaction => {
           const isOwner = ownersIds.includes(interaction.user.id);
 
           if (!hasStaffRole && !isOwner) {
-            return interaction.reply({ content: '❌ Only staff members can use this command!', ephemeral: true });
+            return interaction.reply({ content: '❌ Only staff members can use this command!', flags: { ephemeral: true } });
           }
         }
       }
@@ -449,7 +453,7 @@ client.on('interactionCreate', async interaction => {
         await command.execute(interaction, client);
       } catch (error) {
         console.error(error);
-        await interaction.reply({ content: 'There was an error executing this command!', ephemeral: true }).catch(console.error);
+        await interaction.reply({ content: 'There was an error executing this command!', flags: { ephemeral: true } }).catch(console.error);
       }
     }
 
@@ -618,16 +622,16 @@ client.on('interactionCreate', async interaction => {
           const ticketType = channel.name.includes('order') ? 'order' : 
                             channel.name.includes('support') ? 'support' : 
                             channel.name.includes('vip') ? 'vip' : 'ticket';
-                            
+
           // Get ticket creator information from global map
           let ticketCreator = 'Unknown User';
           let ticketCreatorId = null;
           let ticketData = null;
-          
+
           if (global.activeTickets && global.activeTickets.has(channel.id)) {
             ticketData = global.activeTickets.get(channel.id);
             ticketCreatorId = ticketData.userId;
-            
+
             try {
               const user = await client.users.fetch(ticketCreatorId);
               ticketCreator = user;
@@ -635,7 +639,7 @@ client.on('interactionCreate', async interaction => {
               console.error('Error fetching ticket creator:', userError);
             }
           }
-          
+
           // Create a transcript embed
           const closingEmbed = new EmbedBuilder()
             .setTitle('<:purplearrow:1337594384631332885> **TICKET CLOSED**')
@@ -656,7 +660,7 @@ client.on('interactionCreate', async interaction => {
             if (process.env.LOG_WEBHOOK_URL) {
               const { WebhookClient } = require('discord.js');
               const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
-              
+
               // Collect up to 100 messages for the log
               const messages = await channel.messages.fetch({ limit: 100 });
               const messageLog = Array.from(messages.values())
@@ -669,11 +673,11 @@ client.on('interactionCreate', async interaction => {
                     ? `\nAttachments: ${msg.attachments.map(a => a.url).join(', ')}` 
                     : '';
                   const embeds = msg.embeds.length > 0 ? '\n[Embed was sent]' : '';
-                  
+
                   return `[${time}] ${user}: ${content}${attachments}${embeds}`;
                 })
                 .join('\n\n');
-                
+
               // Create a summary embed with ticket information
               const logEmbed = new EmbedBuilder()
                 .setTitle('Ticket Closed')
@@ -689,7 +693,7 @@ client.on('interactionCreate', async interaction => {
                 )
                 .setColor(0x9B59B6)
                 .setTimestamp();
-              
+
               // If the log is too long for Discord's limits, split or truncate
               if (messageLog.length > 3900) {
                 await webhook.send({ 
@@ -705,7 +709,7 @@ client.on('interactionCreate', async interaction => {
                   name: 'Transcript', 
                   value: '```' + messageLog.substring(0, 1000) + (messageLog.length > 1000 ? '...' : '') + '```'
                 });
-                
+
                 await webhook.send({ embeds: [logEmbed] });
               }
             }
@@ -720,7 +724,7 @@ client.on('interactionCreate', async interaction => {
               if (global.activeTickets) {
                 global.activeTickets.delete(channel.id);
               }
-              
+
               await channel.delete();
 
               // Update queue positions after a ticket is closed
@@ -739,14 +743,14 @@ client.on('interactionCreate', async interaction => {
                     ticketInfo.queuePosition = position;
                     global.activeTickets.set(ch.id, ticketInfo);
                   }
-                  
+
                   await ch.send({
                     embeds: [
                       new EmbedBuilder()
                         .setTitle('<:purplearrow:1337594384631332885> **QUEUE UPDATE**')
                         .setDescription(`***Your ticket queue position has been updated.***\n\n**Current Position: #${position}**`)
                         .setColor(0x9B59B6)
-                        .setFooter({ text: 'ERLC Alting Support' })
+                        .setFooter{ text: 'ERLC Alting Support' })
                     ]
                   });
                   position++;
@@ -868,13 +872,13 @@ client.on('interactionCreate', async interaction => {
             content: `<@&${staffRoleId}> New order: **${productName}** - **${productPrice}**`,
             embeds: [paymentEmbed]
           });
-          
+
           // Log to webhook if configured
           try {
             if (process.env.LOG_WEBHOOK_URL) {
               const { WebhookClient } = require('discord.js');
               const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
-              
+
               const logEmbed = new EmbedBuilder()
                 .setTitle('Product Selected')
                 .setDescription(`A user has selected a product in a ticket`)
@@ -886,7 +890,7 @@ client.on('interactionCreate', async interaction => {
                 )
                 .setColor(0x9B59B6)
                 .setTimestamp();
-                
+
               await webhook.send({ embeds: [logEmbed] });
             }
           } catch (webhookError) {
