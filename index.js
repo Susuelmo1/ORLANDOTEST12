@@ -53,16 +53,26 @@ client.once('ready', () => {
 // Register slash commands
 async function registerCommands() {
   try {
-    // Create an array to store command data
     const commands = [];
+    const commandNames = new Set(); // Initialize a Set to store unique command names
     const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
-    // Load each command and add its data to the array
+    console.log('Loading command files...');
+    
+    // Load each command and check for duplicate names
     for (const file of commandFiles) {
       try {
+        console.log(`Processing file: ${file}`);
         const command = require(`./commands/${file}`);
+        
         if (command && command.data) {
-          commands.push(command.data.toJSON());
+          if (commandNames.has(command.data.name)) {
+            console.error(`DUPLICATE DETECTED: Command name '${command.data.name}' in file ${file} is already registered.`);
+          } else {
+            commandNames.add(command.data.name); // Add the name to the Set
+            commands.push(command.data.toJSON());
+            console.log(`Added command: ${command.data.name} from file ${file}`);
+          }
         } else {
           console.error(`Command file ${file} is missing 'data' property.`);
         }
@@ -77,7 +87,7 @@ async function registerCommands() {
 
     const rest = new REST({ version: '9' }).setToken(process.env.DISCORD_TOKEN);
 
-    console.log('Started refreshing application (/) commands.');
+    console.log(`Started refreshing application (/) commands. Found ${commands.length} unique commands.`);
 
     await rest.put(
       Routes.applicationCommands(client.user.id),
