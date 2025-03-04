@@ -19,15 +19,15 @@ module.exports = {
         .setDescription('***Click one of the buttons below to create a ticket!***')
         .addFields(
           { 
-            name: '**1️⃣ Order Alts**',
+            name: '**<:1_:1337594940179353681> Order Alts**',
             value: '> Create this ticket if you would like to order alts.'
           },
           { 
-            name: '**2️⃣ General Support**',
+            name: '**<:2_:1337594974233165958> General Support**',
             value: '> Create this ticket if you need general support or have any questions.'
           },
           { 
-            name: '**3️⃣ VIP Order**',
+            name: '**<:3_:1337595007548264448> VIP Order**',
             value: '> Create this ticket if you would like to order VIP services.'
           },
           { 
@@ -53,17 +53,17 @@ module.exports = {
           new ButtonBuilder()
             .setCustomId('create_ticket_order')
             .setLabel('Order Alts')
-            .setEmoji('1️⃣')
+            .setEmoji('<:1_:1337594940179353681>')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId('create_ticket_support')
             .setLabel('General Support')
-            .setEmoji('2️⃣')
+            .setEmoji('<:2_:1337594974233165958>')
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId('create_ticket_vip')
             .setLabel('VIP Order')
-            .setEmoji('3️⃣')
+            .setEmoji('<:3_:1337595007548264448>')
             .setStyle(ButtonStyle.Success)
         );
 
