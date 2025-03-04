@@ -1,130 +1,180 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const crypto = require('crypto');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('orderproof')
-    .setDescription('Submit your order proof')
+    .setDescription('Submit proof of your order')
     .addStringOption(option => 
       option.setName('roblox_username')
         .setDescription('Your Roblox username')
         .setRequired(true))
-    .addStringOption(option => 
+    .addAttachmentOption(option => 
       option.setName('screenshot')
-        .setDescription('URL to screenshot of your purchase (must be an image URL)')
-        .setRequired(true)),
+        .setDescription('Screenshot of your purchase proof')
+        .setRequired(true))
+    .addStringOption(option => 
+      option.setName('package')
+        .setDescription('The package you purchased')
+        .setRequired(true)
+        .addChoices(
+          { name: '10 Bots', value: '10_bots' },
+          { name: '15 Bots', value: '15_bots' },
+          { name: '20 Bots', value: '20_bots' },
+          { name: '25 Bots', value: '25_bots' },
+          { name: '30 Bots', value: '30_bots' },
+          { name: '40 Bots', value: '40_bots' },
+          { name: 'Full Server', value: 'full_server' },
+          { name: 'Refill', value: 'refill' },
+          { name: 'Week VIP', value: 'week_vip' },
+          { name: 'Month VIP', value: 'month_vip' },
+          { name: 'Lifetime VIP', value: 'lifetime_vip' }
+        )),
 
   async execute(interaction, client) {
     await interaction.deferReply();
 
     try {
-      // Verify this is being used in a ticket channel
-      const ticketChannel = interaction.channel;
-      if (!ticketChannel.name.includes('ticket') && 
-          !ticketChannel.name.includes('order') && 
-          !ticketChannel.name.includes('support') && 
-          !ticketChannel.name.includes('vip')) {
+      // Check if in a ticket channel
+      if (!interaction.channel.name.includes('ticket')) {
         return interaction.editReply('❌ This command can only be used in a ticket channel!');
       }
 
       const robloxUsername = interaction.options.getString('roblox_username');
-      const screenshotUrl = interaction.options.getString('screenshot');
-
-      // Very basic URL validation
-      if (!screenshotUrl.startsWith('http') || 
-          (!screenshotUrl.includes('.png') && 
-           !screenshotUrl.includes('.jpg') && 
-           !screenshotUrl.includes('.jpeg') && 
-           !screenshotUrl.includes('.gif'))) {
-        return interaction.editReply('❌ Please provide a valid image URL (ending with .png, .jpg, .jpeg, or .gif)');
+      const screenshot = interaction.options.getAttachment('screenshot');
+      const package = interaction.options.getString('package');
+      
+      // Validate the screenshot
+      if (!screenshot.contentType.startsWith('image/')) {
+        return interaction.editReply('❌ Please provide a valid image for your screenshot!');
       }
 
-      // Create order proof embed
-      const orderProofEmbed = new EmbedBuilder()
-        .setTitle('📝 Order Proof Submission')
-        .setDescription(`Order proof submitted by ${interaction.user}`)
-        .addFields(
-          { name: 'Roblox Username', value: robloxUsername, inline: true },
-          { name: 'Submitted By', value: `${interaction.user.tag}`, inline: true },
-          { name: 'Date', value: new Date().toLocaleString(), inline: true },
-          { name: 'Instructions', value: 'Please take a screenshot of your order and upload it where requested.', inline: false }
-        )
-        .setImage(screenshotUrl)
-        .setColor(0x9B59B6)
-        .setFooter({ text: 'ERLC Alting Support' });
+      // Get the package details
+      let packageName = '';
+      let packageDuration = '';
+      
+      switch (package) {
+        case '10_bots':
+          packageName = '10 Bots';
+          packageDuration = '1 day';
+          break;
+        case '15_bots':
+          packageName = '15 Bots';
+          packageDuration = '1 day';
+          break;
+        case '20_bots':
+          packageName = '20 Bots';
+          packageDuration = '1 day';
+          break;
+        case '25_bots':
+          packageName = '25 Bots';
+          packageDuration = '1 day';
+          break;
+        case '30_bots':
+          packageName = '30 Bots';
+          packageDuration = '1 day';
+          break;
+        case '40_bots':
+          packageName = '40 Bots';
+          packageDuration = '1 day';
+          break;
+        case 'full_server':
+          packageName = 'Full Server';
+          packageDuration = '1 day';
+          break;
+        case 'refill':
+          packageName = 'Refill';
+          packageDuration = '1 day';
+          break;
+        case 'week_vip':
+          packageName = 'Week VIP';
+          packageDuration = '7 days';
+          break;
+        case 'month_vip':
+          packageName = 'Month VIP';
+          packageDuration = '30 days';
+          break;
+        case 'lifetime_vip':
+          packageName = 'Lifetime VIP';
+          packageDuration = 'Lifetime';
+          break;
+        default:
+          packageName = 'Unknown Package';
+          packageDuration = 'Unknown';
+      }
 
-      // Create verification buttons for staff
-      const verifyButtons = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('verify_order_proof')
-            .setLabel('Verify Proof')
-            .setStyle(ButtonStyle.Success)
-            .setEmoji('✅'),
-          new ButtonBuilder()
-            .setCustomId('reject_order_proof')
-            .setLabel('Reject Proof')
-            .setStyle(ButtonStyle.Danger)
-            .setEmoji('❌')
-        );
+      // Generate a unique order ID
+      const orderId = crypto.randomBytes(4).toString('hex').toUpperCase();
 
-      // Generate a unique ID for this order proof
-      const orderId = Math.random().toString(36).substring(2, 10).toUpperCase();
-
-      // Store order proof details if we have a global map (can be adapted for database use)
+      // Store the order proof details for later use
       if (!client.orderProofs) {
         client.orderProofs = new Map();
       }
 
       client.orderProofs.set(orderId, {
-        robloxUsername,
-        screenshotUrl,
         userId: interaction.user.id,
-        timestamp: Date.now()
+        robloxUsername,
+        screenshotUrl: screenshot.url,
+        package: packageName,
+        duration: packageDuration,
+        timestamp: new Date()
       });
 
+      // Create a professional embed for the order proof
+      const orderProofEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> **ORDER PROOF SUBMITTED**')
+        .setDescription(`***Order proof has been successfully submitted!***`)
+        .addFields(
+          { name: '**Roblox Username**', value: `\`${robloxUsername}\``, inline: true },
+          { name: '**Package**', value: `\`${packageName}\``, inline: true },
+          { name: '**Duration**', value: `\`${packageDuration}\``, inline: true },
+          { name: '**Order ID**', value: `\`${orderId}\``, inline: false },
+          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `A staff member will verify your proof and provide your key.` }
+        )
+        .setColor(0x9B59B6) // Purple color
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
+        .setThumbnail(screenshot.url)
+        .setFooter({ text: 'ERLC Alting Support' })
+        .setTimestamp();
+
+      // Ping staff for attention
       const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164';
-
-      // Send the embed with verification buttons
-      await interaction.editReply({
-        content: `<@&${staffRoleId}> Order proof submitted! Order ID: \`${orderId}\``,
-        embeds: [orderProofEmbed],
-        components: [verifyButtons]
+      
+      await interaction.editReply({ 
+        content: `<@&${staffRoleId}> New order proof submitted! Order ID: \`${orderId}\``,
+        embeds: [orderProofEmbed]
       });
 
-      // Send a DM to the user with confirmation
+      // Log to a webhook if configured
       try {
-        const dmEmbed = new EmbedBuilder()
-          .setTitle('🧾 Order Proof Received')
-          .setDescription('Your order proof has been submitted successfully!')
-          .addFields(
-            { name: 'Order ID', value: orderId, inline: true },
-            { name: 'Status', value: 'Pending verification', inline: true },
-            { name: 'Next Steps', value: 'A staff member will verify your proof shortly. Please wait in your ticket channel.' }
-          )
-          .setColor(0x9B59B6)
-          .setFooter({ text: 'ERLC Alting Support' });
-
-        await interaction.user.send({ embeds: [dmEmbed] });
-      } catch (dmError) {
-        console.error('Could not send DM to user:', dmError);
-        // Continue if we can't DM - it's not critical
+        if (process.env.LOG_WEBHOOK_URL) {
+          const { WebhookClient } = require('discord.js');
+          const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
+          
+          const logEmbed = new EmbedBuilder()
+            .setTitle('New Order Proof Submitted')
+            .setDescription(`Order proof submitted by ${interaction.user.tag}`)
+            .addFields(
+              { name: 'User', value: `<@${interaction.user.id}>`, inline: true },
+              { name: 'Roblox Username', value: robloxUsername, inline: true },
+              { name: 'Package', value: packageName, inline: true },
+              { name: 'Order ID', value: orderId, inline: false },
+              { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: false }
+            )
+            .setColor(0x9B59B6)
+            .setThumbnail(screenshot.url)
+            .setTimestamp();
+            
+          await webhook.send({ embeds: [logEmbed] });
+        }
+      } catch (webhookError) {
+        console.error('Error sending webhook:', webhookError);
       }
 
     } catch (error) {
-      console.error('Error with order proof command:', error);
-
-      let errorMessage = '❌ There was an error processing your order proof. Please contact a staff member for assistance.';
-
-      if (error.message) {
-        if (error.message.includes('URL')) {
-          errorMessage = '❌ There was an error with your screenshot URL. Please make sure it\'s a valid, accessible image link.';
-        } else if (error.message.includes('permission')) {
-          errorMessage = '❌ I don\'t have permission to perform this action. Please contact a staff member.';
-        }
-      }
-
-      await interaction.editReply(errorMessage);
+      console.error('Error with orderproof command:', error);
+      await interaction.editReply('❌ There was an error submitting your order proof! Please try again or contact a staff member.');
     }
   }
 };

@@ -27,10 +27,18 @@ module.exports = {
       const message = interaction.options.getString('message');
       const targetUser = interaction.options.getUser('user');
 
+      // Create a professional embed for DM
+      const dmEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> ERLC Alting Service')
+        .setDescription(`${message}`)
+        .setColor(0x9B59B6) // Purple color
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
+        .setFooter({ text: 'ERLC Alting Support' });
+
       if (targetUser) {
         // DM just the specified user
         try {
-          await targetUser.send(message);
+          await targetUser.send({ embeds: [dmEmbed] });
           await interaction.editReply(`✅ Message sent to ${targetUser.tag}`);
         } catch (error) {
           console.error(`Error DMing user ${targetUser.tag}:`, error);
@@ -50,7 +58,7 @@ module.exports = {
           if (member.user.bot) continue;
 
           try {
-            await member.send(message);
+            await member.send({ embeds: [dmEmbed] });
             successCount++;
           } catch (error) {
             console.error(`Error DMing user ${member.user.tag}:`, error);

@@ -5,148 +5,174 @@ const crypto = require('crypto');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('generatekey')
-    .setDescription('Generate an alting key')
-    .addUserOption(option => 
-      option.setName('user')
-        .setDescription('User to generate key for')
-        .setRequired(true))
+    .setDescription('Generate a key for a user')
     .addStringOption(option => 
-      option.setName('duration')
-        .setDescription('Duration of the key (daily, weekly, monthly, or lifetime)')
+      option.setName('package')
+        .setDescription('The package type')
         .setRequired(true)
         .addChoices(
-          { name: 'Daily', value: 'daily' },
-          { name: 'Weekly', value: 'weekly' },
-          { name: 'Monthly', value: 'monthly' },
-          { name: 'Lifetime', value: 'lifetime' }
-        )),
+          { name: 'Regular', value: 'regular' },
+          { name: 'Week VIP', value: 'week_vip' },
+          { name: 'Month VIP', value: 'month_vip' },
+          { name: 'Lifetime VIP', value: 'lifetime_vip' }
+        ))
+    .addUserOption(option => 
+      option.setName('user')
+        .setDescription('The user to generate a key for')
+        .setRequired(true))
+    .addStringOption(option => 
+      option.setName('orderid')
+        .setDescription('The Order ID from orderproof')
+        .setRequired(true)),
 
   async execute(interaction, client) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
 
     try {
-      // Check if user has Server Alter role
-      const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164'; // Server Alter role ID
-      const hasStaffRole = interaction.member.roles.cache.has(staffRoleId);
+      // Check if user has staff role
+      const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164';
+      const isStaff = interaction.member.roles.cache.has(staffRoleId);
+      const ownersIds = ['523693281541095424', '1011347151021953145'];
+      const isOwner = ownersIds.includes(interaction.user.id);
 
-      if (!hasStaffRole) {
-        return interaction.editReply('❌ Only Server Alter members can use this command!');
+      if (!isStaff && !isOwner) {
+        return interaction.editReply('❌ Only staff members can use this command!');
       }
 
-      const targetUser = interaction.options.getUser('user');
-      const duration = interaction.options.getString('duration');
+      const package = interaction.options.getString('package');
+      const user = interaction.options.getUser('user');
+      const orderId = interaction.options.getString('orderid');
 
-      // Calculate expiration days based on duration
-      let expirationDays = 0;
-      let durationText = '';
+      // Check if order ID exists
+      if (!client.orderProofs || !client.orderProofs.has(orderId)) {
+        return interaction.editReply(`❌ Order ID \`${orderId}\` not found! Make sure the user has submitted order proof first.`);
+      }
 
-      switch (duration) {
-        case 'daily':
-          expirationDays = 1;
-          durationText = '1 day';
-          break;
-        case 'weekly':
+      // Define expiration period based on package
+      let expirationDays = 1; // Default to 1 day
+      let packageName = 'Regular';
+      
+      switch (package) {
+        case 'week_vip':
           expirationDays = 7;
-          durationText = '7 days';
+          packageName = 'Week VIP';
           break;
-        case 'monthly':
+        case 'month_vip':
           expirationDays = 30;
-          durationText = '30 days';
+          packageName = 'Month VIP';
           break;
-        case 'lifetime':
-          expirationDays = 36500; // ~100 years
-          durationText = 'Lifetime';
+        case 'lifetime_vip':
+          expirationDays = 36500; // ~100 years, essentially lifetime
+          packageName = 'Lifetime VIP';
           break;
       }
 
-      // Generate key
+      // Generate a unique key
       const key = crypto.randomBytes(16).toString('hex').toUpperCase();
-
-      // Calculate expiration date
+      
+      // Set expiration date
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + expirationDays);
-      const formattedDate = expirationDate.toLocaleDateString('en-US', {
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric'
+      
+      // Format expiration date for display
+      const formattedExpiration = expirationDate.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
       });
 
-      // Create key embed for the channel
-      const keyEmbed = new EmbedBuilder()
-        .setTitle('🔑 Key Generated Successfully')
-        .setDescription(`A key has been generated for ${targetUser}`)
+      // Store key details globally (in a real app, this would be in a database)
+      if (!global.generatedKeys) {
+        global.generatedKeys = new Map();
+      }
+      
+      global.generatedKeys.set(key, {
+        userId: user.id,
+        package: packageName,
+        orderId: orderId,
+        generatedBy: interaction.user.id,
+        generatedAt: new Date(),
+        expirationDate: expirationDate,
+        used: false
+      });
+
+      // Create beautiful embed for staff
+      const staffEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> **KEY GENERATED**')
+        .setDescription(`***A key has been generated for ${user}***`)
         .addFields(
-          { name: 'Duration', value: durationText, inline: true },
-          { name: 'Expires', value: duration === 'lifetime' ? 'Never' : formattedDate, inline: true }
+          { name: '**Package**', value: `\`${packageName}\``, inline: true },
+          { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
+          { name: '**Expires**', value: `\`${formattedExpiration}\``, inline: true },
+          { name: '**Key**', value: `\`${key}\``, inline: false },
+          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `Use \`/orderstart\` to activate this key for the user.` }
         )
         .setColor(0x9B59B6)
-        .setTimestamp()
-        .setFooter({ text: 'ERLC Alting Support' });
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
+        .setFooter({ text: 'ERLC Alting Support' })
+        .setTimestamp();
 
-      // Create DM embed with the actual key
-      const dmEmbed = new EmbedBuilder()
-        .setTitle('🔑 Your ERLC Alting Key')
-        .setDescription('Your key has been generated. Keep this information secure!')
-        .addFields(
-          { name: 'Your Key', value: `\`${key}\``, inline: false },
-          { name: 'Duration', value: durationText, inline: true },
-          { name: 'Expires', value: duration === 'lifetime' ? 'Never' : formattedDate, inline: true },
-          { name: '⚠️ Important', value: 'This key is personal and should not be shared with anyone!' }
-        )
-        .setColor(0x9B59B6)
-        .setTimestamp()
-        .setFooter({ text: 'ERLC Alting Support' });
+      // Send key details to staff
+      await interaction.editReply({ embeds: [staffEmbed] });
 
-      // Send the key to both the user's DM and the channel
+      // Try to DM user about their key
       try {
-        // Send to DM
-        await targetUser.send({ embeds: [dmEmbed] });
-
-        // Also show in channel for staff reference
-        const channelKeyEmbed = new EmbedBuilder()
-          .setTitle('🔑 Key Generated')
-          .setDescription(`A key has been generated for ${targetUser}`)
+        const userEmbed = new EmbedBuilder()
+          .setTitle('<:purplearrow:1337594384631332885> **YOUR KEY IS READY**')
+          .setDescription(`***Your ${packageName} key has been generated!***`)
           .addFields(
-            { name: 'Key', value: `\`${key}\``, inline: false },
-            { name: 'Duration', value: durationText, inline: true },
-            { name: 'Expires', value: duration === 'lifetime' ? 'Never' : formattedDate, inline: true },
-            { name: 'Next Step', value: `Use \`/orderstart ${key} @${targetUser.username}\` to activate the service` }
+            { name: '**Key**', value: `\`${key}\``, inline: false },
+            { name: '**Expires**', value: `\`${formattedExpiration}\``, inline: true },
+            { name: '**<:PurpleLine:1336946927282950165> Important**', value: `__***Do not share this key with anyone!***__\nThis key is tied to your account and using it gives access to our services.` }
           )
           .setColor(0x9B59B6)
-          .setTimestamp()
-          .setFooter({ text: 'ERLC Alting Support' });
+          .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
+          .setFooter({ text: 'ERLC Alting Support' })
+          .setTimestamp();
 
-        await interaction.editReply({ 
-          content: `✅ Key successfully generated for ${targetUser}!`,
-          embeds: [channelKeyEmbed]
+        await user.send({ embeds: [userEmbed] });
+        
+        // Let staff know that DM was sent
+        await interaction.followUp({ 
+          content: `✅ Key has been DMed to ${user}!`, 
+          ephemeral: true 
         });
-      } catch (error) {
-        // If we can't DM the user, notify in the channel
-        console.error('Error sending DM:', error);
-
-        const channelKeyEmbed = new EmbedBuilder()
-          .setTitle('🔑 Key Generated')
-          .setDescription(`A key has been generated for ${targetUser}`)
-          .addFields(
-            { name: 'Key', value: `\`${key}\``, inline: false },
-            { name: 'Duration', value: durationText, inline: true },
-            { name: 'Expires', value: duration === 'lifetime' ? 'Never' : formattedDate, inline: true },
-            { name: 'DM Status', value: '❌ Could not send to user\'s DM. Make sure they have DMs enabled!', inline: false },
-            { name: 'Next Step', value: `Use \`/orderstart ${key} @${targetUser.username}\` to activate the service` }
-          )
-          .setColor(0x9B59B6)
-          .setTimestamp()
-          .setFooter({ text: 'ERLC Alting Support' });
-
-        await interaction.editReply({ 
-          content: `⚠️ Key generated but couldn't send to ${targetUser}'s DMs!`,
-          embeds: [channelKeyEmbed]
+      } catch (dmError) {
+        console.error('Could not send DM to user:', dmError);
+        await interaction.followUp({ 
+          content: `⚠️ Could not DM the key to ${user}. Their DMs may be closed.`, 
+          ephemeral: true 
         });
+      }
+
+      // Log to a webhook if configured
+      try {
+        if (process.env.LOG_WEBHOOK_URL) {
+          const { WebhookClient } = require('discord.js');
+          const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
+          
+          const logEmbed = new EmbedBuilder()
+            .setTitle('Key Generated')
+            .setDescription(`A key has been generated by ${interaction.user.tag}`)
+            .addFields(
+              { name: 'Generated For', value: `${user.tag} (<@${user.id}>)`, inline: true },
+              { name: 'Package', value: packageName, inline: true },
+              { name: 'Order ID', value: orderId, inline: true },
+              { name: 'Key', value: `||${key}||`, inline: false },
+              { name: 'Expires', value: formattedExpiration, inline: true }
+            )
+            .setColor(0x9B59B6)
+            .setTimestamp();
+            
+          await webhook.send({ embeds: [logEmbed] });
+        }
+      } catch (webhookError) {
+        console.error('Error sending webhook:', webhookError);
       }
 
     } catch (error) {
       console.error('Error generating key:', error);
-      await interaction.editReply('❌ There was an error generating the key!');
+      await interaction.editReply('❌ There was an error generating the key! Please try again.');
     }
   }
 };

@@ -138,10 +138,6 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
         ticketName = `vip-${user.username.toLowerCase()}`;
         categoryName = 'VIP Tickets';
         break;
-      case 'design':
-        ticketName = `design-${user.username.toLowerCase()}`;
-        categoryName = 'Design Tickets';
-        break;
       default:
         ticketName = `ticket-${user.username.toLowerCase()}`;
         categoryName = 'Tickets';
@@ -209,36 +205,41 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
     if (ticketType === 'support') {
       // Simple welcome message for general support
       welcomeEmbed = new EmbedBuilder()
-        .setTitle('Support Ticket')
-        .setDescription(`Hello ${user}, a staff member will be with you shortly.\n\n**Queue Position: #${queuePosition}**`)
+        .setTitle('<:purplearrow:1337594384631332885> **SUPPORT TICKET**')
+        .setDescription(`***Hello ${user}, a staff member will be with you shortly.***\n\n**Queue Position: #${queuePosition}**`)
         .setColor(0x9B59B6)
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
         .setFooter({ text: 'ERLC Alting Support' });
     } else {
       // Enhanced welcome message for order and VIP tickets
       welcomeEmbed = new EmbedBuilder()
-        .setTitle(`🌟 ${ticketType === 'order' ? 'ORDER' : 'VIP'} TICKET 🌟`)
-        .setDescription(`**Hello ${user}, welcome to your ${ticketType === 'order' ? 'Order' : 'VIP'} Ticket!**\n\n**Queue Position: #${queuePosition}**`)
+        .setTitle(`<:purplearrow:1337594384631332885> **${ticketType.toUpperCase()} TICKET**`)
+        .setDescription(`***Hello ${user}, welcome to your ${ticketType === 'order' ? 'Order' : 'VIP'} Ticket!***\n\n**Queue Position: #${queuePosition}**`)
         .addFields(
           {
-            name: '🚨 **Important Notice**',
+            name: '**🚨 Important Notice**',
             value: '```\n✅ You must complete the required steps below.\n❌ Falsifying order proof will result in an automatic ban.```'
           },
           { 
-            name: '`Step 1️⃣ – Order Proof Submission`', 
+            name: '**`Step 1️⃣ – Order Proof Submission`**', 
             value: '> **Use `/orderproof` to start your order process**\n> You must provide your Roblox username and proof of purchase.'
           },
           { 
-            name: '`Step 2️⃣ – Key Generation`', 
+            name: '**`Step 2️⃣ – Key Generation`**', 
             value: '> **After verification, staff will generate your key**\n> Your key will match your purchase duration and is strictly confidential.'
           },
           { 
-            name: '`Step 3️⃣ – Order Completion`', 
-            value: '> **Staff will finalize your order using `/orderid`**\n> The order details will include your Roblox username, purchase details, and Order ID.\n> Once completed, you will receive the Alting Customer role!'
+            name: '**`Step 3️⃣ – Order Completion`**', 
+            value: '> **Staff will finalize your order using `/orderstart`**\n> The order details will include your Roblox username, purchase details, and Order ID.\n> Once completed, you will receive the Alting Customer role!'
+          },
+          {
+            name: '**<:PurpleLine:1336946927282950165> Security Warning**',
+            value: '> __***Your key is personal and must not be shared under any circumstances.***__'
           }
         )
         .setColor(0x9B59B6)
         .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
-        .setFooter({ text: 'ERLC Alting Support | Your key is personal and should not be shared' });
+        .setFooter({ text: 'ERLC Alting Support' });
     }
 
     // Send the welcome message and close button to the ticket channel
@@ -263,20 +264,115 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
         );
 
       await ticketChannel.send({ 
-        content: '**Please select a VIP package:**', 
+        content: '**<:purplearrow:1337594384631332885> Please select a VIP package:**', 
         components: [vipButtons] 
+      });
+    } else if (ticketType === 'order') {
+      // Add order buttons for different bot packages
+      const orderButtons1 = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('product_10_deal')
+            .setLabel('10 Bots')
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('product_15_deal')
+            .setLabel('15 Bots')
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('product_20_deal')
+            .setLabel('20 Bots')
+            .setStyle(ButtonStyle.Secondary)
+        );
+        
+      const orderButtons2 = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('product_25_deal')
+            .setLabel('25 Bots')
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('product_30_deal')
+            .setLabel('30 Bots')
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('product_40_deal')
+            .setLabel('40 Bots')
+            .setStyle(ButtonStyle.Secondary)
+        );
+        
+      const orderButtons3 = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('product_full_server')
+            .setLabel('Full Server')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('product_refill')
+            .setLabel('Refill')
+            .setStyle(ButtonStyle.Success)
+        );
+
+      await ticketChannel.send({ 
+        content: '**<:purplearrow:1337594384631332885> Please select a package:**', 
+        components: [orderButtons1, orderButtons2, orderButtons3] 
       });
     }
 
     // Ping the user and staff role in the ticket
     await ticketChannel.send(`${user} <@&${staffRoleId}>`);
 
+    // Track ticket creation for logging
+    if (!global.ticketStats) {
+      global.ticketStats = {
+        total: 0,
+        byType: {
+          order: 0,
+          support: 0,
+          vip: 0
+        },
+        byUser: new Map()
+      };
+    }
+    
+    global.ticketStats.total++;
+    global.ticketStats.byType[ticketType]++;
+    
+    const userStats = global.ticketStats.byUser.get(user.id) || { total: 0, types: {} };
+    userStats.total++;
+    userStats.types[ticketType] = (userStats.types[ticketType] || 0) + 1;
+    global.ticketStats.byUser.set(user.id, userStats);
+
+    // Log to webhook if configured
+    try {
+      if (process.env.LOG_WEBHOOK_URL) {
+        const { WebhookClient } = require('discord.js');
+        const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
+        
+        const logEmbed = new EmbedBuilder()
+          .setTitle('New Ticket Created')
+          .setDescription(`A new ${ticketType} ticket has been created`)
+          .addFields(
+            { name: 'User', value: `${user.tag} (<@${user.id}>)`, inline: true },
+            { name: 'Ticket Type', value: ticketType.charAt(0).toUpperCase() + ticketType.slice(1), inline: true },
+            { name: 'Queue Position', value: `#${queuePosition}`, inline: true },
+            { name: 'Channel', value: `<#${ticketChannel.id}>`, inline: false }
+          )
+          .setColor(0x9B59B6)
+          .setTimestamp();
+          
+        await webhook.send({ embeds: [logEmbed] });
+      }
+    } catch (webhookError) {
+      console.error('Error sending webhook:', webhookError);
+    }
+
     // Handle DM context
     if (fromDM) {
       // Update the DM with ticket information
       const ticketInfoEmbed = new EmbedBuilder()
-        .setTitle('🎟️ Ticket Created Successfully')
-        .setDescription(`Your ${ticketType} ticket has been created in the server. [Click to view](https://discord.com/channels/${guild.id}/${ticketChannel.id})`)
+        .setTitle('<:purplearrow:1337594384631332885> **TICKET CREATED**')
+        .setDescription(`***Your ${ticketType} ticket has been created in the server.***\n\n[**Click here to view your ticket**](https://discord.com/channels/${guild.id}/${ticketChannel.id})`)
         .addFields(
           {
             name: '**Required Next Step:**',
@@ -288,6 +384,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
           }
         )
         .setColor(0x9B59B6)
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
         .setFooter({ text: 'ERLC Alting Support' });
 
       await interaction.editReply({ 
@@ -299,6 +396,15 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
       // Reply in the server
       await interaction.editReply(`✅ Your ticket has been created: ${ticketChannel}`);
     }
+    
+    // Store the ticket in global active tickets map
+    global.activeTickets.set(ticketChannel.id, {
+      userId: user.id,
+      type: ticketType,
+      createdAt: new Date(),
+      queuePosition: queuePosition
+    });
+    
   } catch (error) {
     console.error('Error creating ticket channel:', error);
     await interaction.editReply('❌ There was an error creating your ticket. Please try again later.');
@@ -367,36 +473,36 @@ client.on('interactionCreate', async interaction => {
             // Send instructions in DM for order and VIP tickets
             try {
               const orderStartEmbed = new EmbedBuilder()
-                .setTitle(`🌟 ${ticketType.toUpperCase()} ORDER PROCESS 🌟`)
-                .setDescription(`**Hello ${user}!**\n\nBefore creating your ticket, please follow these important steps:`)
+                .setTitle(`<:purplearrow:1337594384631332885> **${ticketType.toUpperCase()} ORDER PROCESS**`)
+                .setDescription(`***Hello ${user}!***\n\n**Before creating your ticket, please follow these important steps:**`)
                 .addFields(
                   { 
-                    name: '🚨 **Important Notice**', 
+                    name: '**🚨 Important Notice**', 
                     value: '```\n✅ You CANNOT open a ticket until you complete these required steps.\n❌ Falsifying order proof will result in an automatic ban.```'
                   },
                   { 
-                    name: '`Step 1️⃣ – Make Your Purchase`', 
+                    name: '**`Step 1️⃣ – Make Your Purchase`**', 
                     value: '> **Purchase your desired package from one of these links:**'
                   },
                   { 
-                    name: '**__Payment Links__**', 
-                    value: '> 40 Bots: [Copy Me](https://www.roblox.com/catalog/109981296260142)\n> 30 Bots: [Copy Me](https://www.roblox.com/catalog/138973868529963)\n> 25 Bots: [Copy Me](https://www.roblox.com/catalog/114907246125026)\n> 20 Bots: [Copy Me](https://www.roblox.com/catalog/90251095378460)\n> 15 Bots: [Copy Me](https://www.roblox.com/catalog/114311203640066)\n> 10 Bots: [Copy Me](https://www.roblox.com/catalog/110507656911368)'
+                    name: '**<:PurpleLine:1336946927282950165> __Payment Links__**', 
+                    value: '> **40 Bots:** [Copy Me](https://www.roblox.com/catalog/109981296260142)\n> **30 Bots:** [Copy Me](https://www.roblox.com/catalog/138973868529963)\n> **25 Bots:** [Copy Me](https://www.roblox.com/catalog/114907246125026)\n> **20 Bots:** [Copy Me](https://www.roblox.com/catalog/90251095378460)\n> **15 Bots:** [Copy Me](https://www.roblox.com/catalog/114311203640066)\n> **10 Bots:** [Copy Me](https://www.roblox.com/catalog/110507656911368)'
                   },
                   { 
-                    name: '**__Full Server__**', 
-                    value: '> Full Server: [Copy Me](https://www.roblox.com/catalog/101932399625607)\n> Refill: [Copy Me](https://www.roblox.com/catalog/133192264732348)'
+                    name: '**<:PurpleLine:1336946927282950165> __Full Server__**', 
+                    value: '> **Full Server:** [Copy Me](https://www.roblox.com/catalog/101932399625607)\n> **Refill:** [Copy Me](https://www.roblox.com/catalog/133192264732348)'
                   },
                   { 
-                    name: '**__VIP__**', 
-                    value: '> Lifetime: [Copy Me](https://www.roblox.com/catalog/98202400395342)\n> Month: [Copy Me](https://www.roblox.com/catalog/85144990668024)\n> Week: [Copy Me](https://www.roblox.com/catalog/87544796577389)'
+                    name: '**<:PurpleLine:1336946927282950165> __VIP__**', 
+                    value: '> **Lifetime:** [Copy Me](https://www.roblox.com/catalog/98202400395342)\n> **Month:** [Copy Me](https://www.roblox.com/catalog/85144990668024)\n> **Week:** [Copy Me](https://www.roblox.com/catalog/87544796577389)'
                   },
                   { 
-                    name: '`Step 2️⃣ – Order Proof Submission`', 
+                    name: '**`Step 2️⃣ – Order Proof Submission`**', 
                     value: '> **After purchase, use the `/orderproof` command in your ticket with:**\n> • Your Roblox username\n> • Screenshot of your purchase'
                   },
                   { 
-                    name: '`Step 3️⃣ – Key Generation`', 
-                    value: '> • Your key will match your purchase duration\n> • The key is strictly confidential\n> • Must NOT be shared under any circumstances'
+                    name: '**`Step 3️⃣ – Key Generation`**', 
+                    value: '> • Your key will match your purchase duration\n> • The key is strictly confidential\n> • __***Must NOT be shared under any circumstances***__'
                   }
                 )
                 .setColor(0x9B59B6)
@@ -512,12 +618,109 @@ client.on('interactionCreate', async interaction => {
           const ticketType = channel.name.includes('order') ? 'order' : 
                             channel.name.includes('support') ? 'support' : 
                             channel.name.includes('vip') ? 'vip' : 'ticket';
+                            
+          // Get ticket creator information from global map
+          let ticketCreator = 'Unknown User';
+          let ticketCreatorId = null;
+          let ticketData = null;
+          
+          if (global.activeTickets && global.activeTickets.has(channel.id)) {
+            ticketData = global.activeTickets.get(channel.id);
+            ticketCreatorId = ticketData.userId;
+            
+            try {
+              const user = await client.users.fetch(ticketCreatorId);
+              ticketCreator = user;
+            } catch (userError) {
+              console.error('Error fetching ticket creator:', userError);
+            }
+          }
+          
+          // Create a transcript embed
+          const closingEmbed = new EmbedBuilder()
+            .setTitle('<:purplearrow:1337594384631332885> **TICKET CLOSED**')
+            .setDescription('***This ticket is now closed and will be deleted in 5 seconds...***')
+            .addFields(
+              { name: '**Closed By**', value: `${interaction.user}`, inline: true },
+              { name: '**Ticket Type**', value: `\`${ticketType.charAt(0).toUpperCase() + ticketType.slice(1)}\``, inline: true }
+            )
+            .setColor(0x9B59B6)
+            .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
+            .setFooter({ text: 'ERLC Alting Support' })
+            .setTimestamp();
 
-          await channel.send('This ticket is now closed and will be deleted in 5 seconds...');
+          await channel.send({ embeds: [closingEmbed] });
+
+          // Log ticket closure to webhook
+          try {
+            if (process.env.LOG_WEBHOOK_URL) {
+              const { WebhookClient } = require('discord.js');
+              const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
+              
+              // Collect up to 100 messages for the log
+              const messages = await channel.messages.fetch({ limit: 100 });
+              const messageLog = Array.from(messages.values())
+                .reverse()
+                .map(msg => {
+                  const time = new Date(msg.createdTimestamp).toLocaleString();
+                  const user = msg.author.tag;
+                  const content = msg.content || '[No text content]';
+                  const attachments = msg.attachments.size > 0 
+                    ? `\nAttachments: ${msg.attachments.map(a => a.url).join(', ')}` 
+                    : '';
+                  const embeds = msg.embeds.length > 0 ? '\n[Embed was sent]' : '';
+                  
+                  return `[${time}] ${user}: ${content}${attachments}${embeds}`;
+                })
+                .join('\n\n');
+                
+              // Create a summary embed with ticket information
+              const logEmbed = new EmbedBuilder()
+                .setTitle('Ticket Closed')
+                .setDescription(`A ${ticketType} ticket has been closed`)
+                .addFields(
+                  { name: 'Ticket Creator', value: ticketCreatorId ? `<@${ticketCreatorId}>` : 'Unknown', inline: true },
+                  { name: 'Closed By', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+                  { name: 'Ticket Type', value: ticketType.charAt(0).toUpperCase() + ticketType.slice(1), inline: true },
+                  { name: 'Channel Name', value: channel.name, inline: true },
+                  { name: 'Duration', value: ticketData?.createdAt ? 
+                      `${Math.round((new Date() - new Date(ticketData.createdAt)) / (1000 * 60))} minutes` : 
+                      'Unknown', inline: true }
+                )
+                .setColor(0x9B59B6)
+                .setTimestamp();
+              
+              // If the log is too long for Discord's limits, split or truncate
+              if (messageLog.length > 3900) {
+                await webhook.send({ 
+                  embeds: [logEmbed],
+                  content: 'Ticket transcript (beginning):',
+                  files: [{
+                    attachment: Buffer.from(messageLog),
+                    name: `transcript-${channel.name}-${new Date().toISOString()}.txt`
+                  }]
+                });
+              } else {
+                logEmbed.addFields({ 
+                  name: 'Transcript', 
+                  value: '```' + messageLog.substring(0, 1000) + (messageLog.length > 1000 ? '...' : '') + '```'
+                });
+                
+                await webhook.send({ embeds: [logEmbed] });
+              }
+            }
+          } catch (webhookError) {
+            console.error('Error sending webhook log:', webhookError);
+          }
 
           // Delete the channel after 5 seconds
           setTimeout(async () => {
             try {
+              // Remove from active tickets map
+              if (global.activeTickets) {
+                global.activeTickets.delete(channel.id);
+              }
+              
               await channel.delete();
 
               // Update queue positions after a ticket is closed
@@ -527,17 +730,26 @@ client.on('interactionCreate', async interaction => {
               );
 
               // Notify each remaining ticket about updated queue position
+              let position = 1;
               openTickets.forEach(async (ch, index) => {
                 try {
+                  // Update the global queue position
+                  if (global.activeTickets && global.activeTickets.has(ch.id)) {
+                    const ticketInfo = global.activeTickets.get(ch.id);
+                    ticketInfo.queuePosition = position;
+                    global.activeTickets.set(ch.id, ticketInfo);
+                  }
+                  
                   await ch.send({
                     embeds: [
                       new EmbedBuilder()
-                        .setTitle('Queue Position Update')
-                        .setDescription(`Your ticket queue position has been updated.\n\n**Current Position: #${index + 1}**`)
+                        .setTitle('<:purplearrow:1337594384631332885> **QUEUE UPDATE**')
+                        .setDescription(`***Your ticket queue position has been updated.***\n\n**Current Position: #${position}**`)
                         .setColor(0x9B59B6)
                         .setFooter({ text: 'ERLC Alting Support' })
                     ]
                   });
+                  position++;
                 } catch (err) {
                   console.error('Error updating queue position for channel:', ch.name, err);
                 }
@@ -626,20 +838,24 @@ client.on('interactionCreate', async interaction => {
 
           // Create a payment embed with instructions
           const paymentEmbed = new EmbedBuilder()
-            .setTitle('💰 Payment Details')
-            .setDescription(`You have selected: **${productName}** - Price: **${productPrice}**`)
+            .setTitle('<:purplearrow:1337594384631332885> **PAYMENT DETAILS**')
+            .setDescription(`***You have selected: __${productName}__ - Price: __${productPrice}__***`)
             .addFields(
               { 
-                name: '`Step 1️⃣`', 
+                name: '**`Step 1️⃣ – Payment`**', 
                 value: '> **Payment Methods**\n> Please wait for a staff member to provide payment instructions.'
               },
               { 
-                name: '`Step 2️⃣`', 
-                value: '> **Confirmation**\n> After payment, a staff member will confirm your purchase.'
+                name: '**`Step 2️⃣ – Confirmation`**', 
+                value: '> **Order Proof**\n> After payment, use `/orderproof` to submit your proof of purchase.'
               },
               { 
-                name: '`Step 3️⃣`', 
-                value: '> **Key Generation**\n> Staff will generate your key using `/generatekey`.'
+                name: '**`Step 3️⃣ – Activation`**', 
+                value: '> **Key Generation**\n> Staff will generate your key and activate your service.'
+              },
+              {
+                name: '**<:PurpleLine:1336946927282950165> Important Information**',
+                value: '> • Your key will match your purchase duration\n> • The key is strictly confidential\n> • __***Must NOT be shared under any circumstances***__'
               }
             )
             .setColor(0x9B59B6)
@@ -652,6 +868,30 @@ client.on('interactionCreate', async interaction => {
             content: `<@&${staffRoleId}> New order: **${productName}** - **${productPrice}**`,
             embeds: [paymentEmbed]
           });
+          
+          // Log to webhook if configured
+          try {
+            if (process.env.LOG_WEBHOOK_URL) {
+              const { WebhookClient } = require('discord.js');
+              const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
+              
+              const logEmbed = new EmbedBuilder()
+                .setTitle('Product Selected')
+                .setDescription(`A user has selected a product in a ticket`)
+                .addFields(
+                  { name: 'User', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+                  { name: 'Product', value: productName, inline: true },
+                  { name: 'Price', value: productPrice, inline: true },
+                  { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: false }
+                )
+                .setColor(0x9B59B6)
+                .setTimestamp();
+                
+              await webhook.send({ embeds: [logEmbed] });
+            }
+          } catch (webhookError) {
+            console.error('Error sending webhook:', webhookError);
+          }
 
           // Send confirmation to the user's DM
           try {

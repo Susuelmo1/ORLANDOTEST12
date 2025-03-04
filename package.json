@@ -1,19 +1,28 @@
+
 {
-  "name": "nodejs",
+  "name": "erlc-alting-bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Discord bot for ERLC Alting service",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "discord",
+    "bot",
+    "tickets",
+    "erlc"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@discordjs/rest": "^2.4.3",
-    "@types/node": "^18.0.6",
     "discord-api-types": "^0.37.119",
     "discord.js": "^14.18.0",
     "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }
