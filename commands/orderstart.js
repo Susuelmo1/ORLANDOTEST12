@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
@@ -47,7 +46,7 @@ module.exports = {
       }
 
       const keyDetails = global.generatedKeys.get(key);
-      
+
       // Check if key is already used
       if (keyDetails.used) {
         return interaction.editReply('❌ This key has already been used!');
@@ -55,7 +54,7 @@ module.exports = {
 
       // Get order details
       const orderDetails = client.orderProofs.get(orderId);
-      
+
       // Mark key as used
       keyDetails.used = true;
       keyDetails.activatedBy = interaction.user.id;
@@ -88,15 +87,15 @@ module.exports = {
       try {
         const memberPromise = interaction.guild.members.fetch(targetUser.id);
         const member = await memberPromise;
-        
+
         // Always add Alting Customer role
         const customerRoleId = '1345908233700773978';
         await member.roles.add(customerRoleId);
-        
+
         // Add specific VIP role based on package
         if (keyDetails.package.includes('VIP')) {
           let vipRoleId = '';
-          
+
           if (keyDetails.package === 'Lifetime VIP') {
             vipRoleId = '1336741718531248220';
           } else if (keyDetails.package === 'Month VIP') {
@@ -104,7 +103,7 @@ module.exports = {
           } else if (keyDetails.package === 'Week VIP') {
             vipRoleId = '1336741795454783561';
           }
-          
+
           if (vipRoleId) {
             await member.roles.add(vipRoleId);
             successEmbed.addFields({ 
@@ -155,7 +154,7 @@ module.exports = {
         const webhookUrl = 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
         const { WebhookClient } = require('discord.js');
         const webhook = new WebhookClient({ url: webhookUrl });
-          
+
           const logEmbed = new EmbedBuilder()
             .setTitle('Service Activated')
             .setDescription(`A service has been activated by ${interaction.user.tag}`)
@@ -169,10 +168,9 @@ module.exports = {
             )
             .setColor(0x9B59B6)
             .setTimestamp();
-            
+
           await webhook.send({ embeds: [logEmbed] });
-        }
-      } catch (webhookError) {
+        } catch (webhookError) {
         console.error('Error sending webhook:', webhookError);
       }
 

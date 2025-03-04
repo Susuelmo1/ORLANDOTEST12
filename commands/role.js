@@ -3,7 +3,7 @@ const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('disc
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('softban')
+    .setName('role')
     .setDescription('Ban and immediately unban a user to delete their messages')
     .addUserOption(option => 
       option.setName('user')
