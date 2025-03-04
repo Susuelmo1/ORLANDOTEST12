@@ -11,9 +11,16 @@ module.exports = {
         .setDescription('The package type')
         .setRequired(true)
         .addChoices(
-          { name: 'Regular', value: 'regular' },
-          { name: 'Week VIP', value: 'week_vip' },
-          { name: 'Month VIP', value: 'month_vip' },
+          { name: 'Daily (1 day)', value: 'daily' },
+          { name: 'Day 2', value: 'day_2' },
+          { name: 'Day 3', value: 'day_3' },
+          { name: 'Day 4', value: 'day_4' },
+          { name: 'Day 5', value: 'day_5' },
+          { name: 'Day 6', value: 'day_6' },
+          { name: 'Day 7', value: 'day_7' },
+          { name: 'Week (7 days)', value: 'week_vip' },
+          { name: '2 Weeks (14 days)', value: 'two_weeks' },
+          { name: 'Month (30 days)', value: 'month_vip' },
           { name: 'Lifetime VIP', value: 'lifetime_vip' }
         ))
     .addUserOption(option => 
@@ -50,12 +57,44 @@ module.exports = {
 
       // Define expiration period based on package
       let expirationDays = 1; // Default to 1 day
-      let packageName = 'Regular';
+      let packageName = 'Daily';
       
       switch (package) {
+        case 'daily':
+          expirationDays = 1;
+          packageName = 'Daily (1 day)';
+          break;
+        case 'day_2':
+          expirationDays = 2;
+          packageName = 'Day 2';
+          break;
+        case 'day_3':
+          expirationDays = 3;
+          packageName = 'Day 3';
+          break;
+        case 'day_4':
+          expirationDays = 4;
+          packageName = 'Day 4';
+          break;
+        case 'day_5':
+          expirationDays = 5;
+          packageName = 'Day 5';
+          break;
+        case 'day_6':
+          expirationDays = 6;
+          packageName = 'Day 6';
+          break;
+        case 'day_7':
+          expirationDays = 7;
+          packageName = 'Day 7';
+          break;
         case 'week_vip':
           expirationDays = 7;
           packageName = 'Week VIP';
+          break;
+        case 'two_weeks':
+          expirationDays = 14;
+          packageName = '2 Weeks';
           break;
         case 'month_vip':
           expirationDays = 30;

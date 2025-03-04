@@ -39,9 +39,11 @@ module.exports = {
     await interaction.deferReply();
 
     try {
-      // Check if in a ticket channel
-      if (!interaction.channel.name.includes('ticket')) {
-        return interaction.editReply('❌ This command can only be used in a ticket channel!');
+      // Allow the command to be used in any channel
+      // Exclude specific channels where we don't want this command used
+      const blockedChannelIds = ['1337553581250838639', '1337553699714760837', '1337592519462096927', '1346305973622673478'];
+      if (blockedChannelIds.includes(interaction.channel.id)) {
+        return interaction.editReply('❌ This command cannot be used in this channel!');
       }
 
       const robloxUsername = interaction.options.getString('roblox_username');
