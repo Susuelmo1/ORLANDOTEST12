@@ -754,7 +754,7 @@ client.on('interactionCreate', async interaction => {
                     ]
                   });
                   position++;
-                } catch (err{
+                } catch (err) {
                   console.error('Error updating queue position for channel:', ch.name, err);
                 }
               });
