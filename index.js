@@ -766,3 +766,169 @@ client.on('interactionCreate', async interaction => {
               console.error('Error deleting channel:', deleteError);
             }
           }, 5000);
+
+          // Log to webhook
+          try {
+            const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
+            const { WebhookClient } = require('discord.js');
+            const webhook = new WebhookClient({ url: webhookUrl });
+
+            const logEmbed = new EmbedBuilder()
+              .setTitle('Ticket Closed')
+              .setDescription(`A ticket has been closed by ${interaction.user.tag}`)
+              .addFields(
+                { name: 'Ticket Type', value: ticketType.charAt(0).toUpperCase() + ticketType.slice(1), inline: true },
+                { name: 'Channel Name', value: channel.name, inline: true },
+                { name: 'Closed By', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true }
+              )
+              .setColor(0x9B59B6)
+              .setTimestamp();
+
+            if (ticketCreatorId) {
+              logEmbed.addFields({ name: 'Created By', value: `${ticketCreator.tag || 'Unknown'} (<@${ticketCreatorId}>)`, inline: true });
+            }
+
+            await webhook.send({ embeds: [logEmbed] });
+          } catch (webhookError) {
+            console.error('Error sending webhook:', webhookError);
+          }
+        } catch (error) {
+          console.error('Error closing ticket:', error);
+          await interaction.editReply('❌ There was an error closing this ticket!');
+        }
+      }
+
+      // Cancel close ticket
+      else if (interaction.customId === 'cancel_close') {
+        await interaction.update({ 
+          content: '✅ Ticket close cancelled.', 
+          embeds: [], 
+          components: [] 
+        });
+      }
+
+      // Product selection buttons
+      else if (interaction.customId.startsWith('product_')) {
+        await interaction.deferReply({ ephemeral: true });
+
+        try {
+          const product = interaction.customId.replace('product_', '');
+          const channel = interaction.channel;
+          
+          // Store the product selection for this ticket
+          if (!global.activeTickets.has(channel.id)) {
+            global.activeTickets.set(channel.id, {});
+          }
+          
+          const ticketData = global.activeTickets.get(channel.id);
+          ticketData.selectedProduct = product;
+          global.activeTickets.set(channel.id, ticketData);
+
+          // Create product information embed based on selection
+          let productInfo = '';
+          let productPrice = '';
+          
+          switch (product) {
+            case '10_deal':
+              productInfo = '10 Bots - Weekly Access';
+              productPrice = '$10.00';
+              break;
+            case '15_deal':
+              productInfo = '15 Bots - Weekly Access';
+              productPrice = '$15.00';
+              break;
+            case '20_deal':
+              productInfo = '20 Bots - Weekly Access';
+              productPrice = '$20.00';
+              break;
+            case '25_deal':
+              productInfo = '25 Bots - Weekly Access';
+              productPrice = '$25.00';
+              break;
+            case '30_deal':
+              productInfo = '30 Bots - Weekly Access';
+              productPrice = '$30.00';
+              break;
+            case '40_deal':
+              productInfo = '40 Bots - Weekly Access';
+              productPrice = '$40.00';
+              break;
+            case 'full_server':
+              productInfo = 'Full Server - Weekly Access';
+              productPrice = '$50.00';
+              break;
+            case 'refill':
+              productInfo = 'Refill Service';
+              productPrice = '$20.00';
+              break;
+            case 'week_vip':
+              productInfo = 'VIP Access - 1 Week';
+              productPrice = '$5.00';
+              break;
+            case 'month_vip':
+              productInfo = 'VIP Access - 1 Month';
+              productPrice = '$15.00';
+              break;
+            case 'lifetime_vip':
+              productInfo = 'VIP Access - Lifetime';
+              productPrice = '$25.00';
+              break;
+            default:
+              productInfo = 'Unknown Product';
+              productPrice = 'Unknown Price';
+          }
+
+          // Send confirmation message
+          const productEmbed = new EmbedBuilder()
+            .setTitle('<:purplearrow:1337594384631332885> **PRODUCT SELECTED**')
+            .setDescription(`You have selected: **${productInfo}**`)
+            .addFields(
+              { name: 'Price', value: productPrice, inline: true },
+              { 
+                name: 'Next Steps', 
+                value: 'Wait for staff to verify your order proof and process your payment.' 
+              }
+            )
+            .setColor(0x9B59B6)
+            .setTimestamp();
+
+          await channel.send({ embeds: [productEmbed] });
+          await interaction.editReply('✅ Product selection confirmed!');
+
+          // Log to webhook
+          try {
+            const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
+            const { WebhookClient } = require('discord.js');
+            const webhook = new WebhookClient({ url: webhookUrl });
+
+            const logEmbed = new EmbedBuilder()
+              .setTitle('Product Selected')
+              .setDescription(`A product has been selected in ${channel.name}`)
+              .addFields(
+                { name: 'User', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+                { name: 'Product', value: productInfo, inline: true },
+                { name: 'Price', value: productPrice, inline: true },
+                { name: 'Channel', value: `<#${channel.id}>`, inline: false }
+              )
+              .setColor(0x9B59B6)
+              .setTimestamp();
+
+            await webhook.send({ embeds: [logEmbed] });
+          } catch (webhookError) {
+            console.error('Error sending webhook:', webhookError);
+          }
+
+        } catch (error) {
+          console.error('Error with product selection:', error);
+          await interaction.editReply('❌ There was an error with your product selection!');
+        }
+      }
+
+    }
+  } catch (interactionError) {
+    console.error('Error handling interaction:', interactionError);
+  }
+});
+
+// Log in to Discord
+client.login(process.env.DISCORD_TOKEN);
