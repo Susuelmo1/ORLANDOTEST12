@@ -1,0 +1,83 @@
+Loaded command: ban
+Loaded command: dmall
+Loaded command: generatekey
+Loaded command: kick
+Loaded command: orderhistory
+Loaded command: orderid
+Loaded command: orderproof
+Error loading command from file orderstart.js: /home/runner/workspace/commands/orderstart.js:174
+        }
+        ^
+
+SyntaxError: Missing catch or finally after try
+    at wrapSafe (node:internal/modules/cjs/loader:1378:20)
+    at Module._compile (node:internal/modules/cjs/loader:1428:41)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1548:10)
+    at Module.load (node:internal/modules/cjs/loader:1288:32)
+    at Module._load (node:internal/modules/cjs/loader:1104:12)
+    at Module.require (node:internal/modules/cjs/loader:1311:19)
+    at require (node:internal/modules/helpers:179:18)
+    at Object.<anonymous> (/home/runner/workspace/index.js:26:21)
+    at Module._compile (node:internal/modules/cjs/loader:1469:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1548:10)
+Loaded command: payment
+Loaded command: softban
+Loaded command: serveractivated
+Loaded command: setup
+Loaded command: softban
+Loaded command: support
+Loaded command: ticketmaker
+Loaded command: vouch
+Loaded command: welcome
+Logged in as ERLC Alting#5856
+Loading command files...
+Processing file: ban.js
+Added command: ban from file ban.js
+Processing file: dmall.js
+Added command: dmall from file dmall.js
+Processing file: generatekey.js
+Added command: generatekey from file generatekey.js
+Processing file: kick.js
+Added command: kick from file kick.js
+Processing file: orderhistory.js
+Added command: orderhistory from file orderhistory.js
+Processing file: orderid.js
+Added command: orderid from file orderid.js
+Processing file: orderproof.js
+Added command: orderproof from file orderproof.js
+Processing file: orderstart.js
+Error loading command from file orderstart.js: /home/runner/workspace/commands/orderstart.js:174
+        }
+        ^
+
+SyntaxError: Missing catch or finally after try
+    at wrapSafe (node:internal/modules/cjs/loader:1378:20)
+    at Module._compile (node:internal/modules/cjs/loader:1428:41)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1548:10)
+    at Module.load (node:internal/modules/cjs/loader:1288:32)
+    at Module._load (node:internal/modules/cjs/loader:1104:12)
+    at Module.require (node:internal/modules/cjs/loader:1311:19)
+    at require (node:internal/modules/helpers:179:18)
+    at registerCommands (/home/runner/workspace/index.js:136:25)
+    at Client.<anonymous> (/home/runner/workspace/index.js:50:3)
+    at Object.onceWrapper (node:events:633:26)
+Processing file: payment.js
+Added command: payment from file payment.js
+Processing file: role.js
+Added command: softban from file role.js
+Processing file: serveractivated.js
+Added command: serveractivated from file serveractivated.js
+Processing file: setup.js
+Added command: setup from file setup.js
+Processing file: softban.js
+DUPLICATE DETECTED: Command name 'softban' in file softban.js is already registered.
+Processing file: support.js
+Added command: support from file support.js
+Processing file: ticketmaker.js
+Added command: ticketmaker from file ticketmaker.js
+Processing file: vouch.js
+Added command: vouch from file vouch.js
+Processing file: welcome.js
+Added command: welcome from file welcome.js
+Started refreshing application (/) commands. Found 15 unique commands.
+Successfully reloaded application (/) commands.
