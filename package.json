@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "update": "npm update",
+    "audit": "npm audit fix",
+    "prune": "npm prune --production"
   },
   "keywords": [
     "discord",
@@ -17,9 +20,12 @@
   "license": "ISC",
   "dependencies": {
     "@discordjs/rest": "^2.4.3",
+    "cors": "^2.8.5",
     "discord-api-types": "^0.37.119",
     "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
     "puppeteer": "^19.7.2"
   },
   "devDependencies": {

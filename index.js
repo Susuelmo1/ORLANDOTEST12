@@ -1064,5 +1064,9 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
+// Initialize keep-alive mechanism
+const keepAlive = require('./keep_alive');
+keepAlive();
+
 // Log in to Discord
 client.login(process.env.DISCORD_TOKEN);
