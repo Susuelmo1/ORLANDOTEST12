@@ -1,208 +1,214 @@
-const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const { sendWebhook } = require('../utils/webhook');
+
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { logOrderCompletion } = require('../utils/webhook');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('orderend')
-    .setDescription('End an active order and log the completion')
-    .addStringOption(option => 
+    .setDescription('Mark an order as complete and end the service')
+    .addStringOption(option =>
       option.setName('orderid')
-        .setDescription('The order ID to complete')
+        .setDescription('The Order ID to end')
         .setRequired(true))
-    .addUserOption(option => 
-      option.setName('user1')
-        .setDescription('First user to log time for')
-        .setRequired(true))
-    .addIntegerOption(option =>
-      option.setName('duration1')
-        .setDescription('Duration in minutes for user 1')
-        .setRequired(true))
-    .addUserOption(option => 
-      option.setName('user2')
-        .setDescription('Second user to log time for (optional)')
-        .setRequired(false))
-    .addIntegerOption(option =>
-      option.setName('duration2')
-        .setDescription('Duration in minutes for user 2')
-        .setRequired(false))
-    .addUserOption(option => 
-      option.setName('user3')
-        .setDescription('Third user to log time for (optional)')
-        .setRequired(false))
-    .addIntegerOption(option =>
-      option.setName('duration3')
-        .setDescription('Duration in minutes for user 3')
-        .setRequired(false))
+    .addStringOption(option =>
+      option.setName('reason')
+        .setDescription('Reason for ending the order')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Complete - Service finished successfully', value: 'complete' },
+          { name: 'Expired - Service duration ended', value: 'expired' },
+          { name: 'Cancelled - Customer request', value: 'cancelled' },
+          { name: 'Cancelled - TOS violation', value: 'tos_violation' },
+          { name: 'Cancelled - Payment issue', value: 'payment_issue' },
+          { name: 'Other (specify in notes)', value: 'other' }
+        ))
     .addStringOption(option =>
       option.setName('notes')
-        .setDescription('Additional notes about the order completion')
-        .setRequired(false)),
+        .setDescription('Additional notes about the order end (optional)'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
   async execute(interaction, client) {
     await interaction.deferReply();
 
     try {
+      // Check if user has staff role
       const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164';
-      const isStaff = interaction.member.roles.cache.has(staffRoleId);
+      const member = interaction.member;
       const ownersIds = ['523693281541095424', '1011347151021953145'];
+      const hasStaffRole = member.roles.cache.has(staffRoleId);
       const isOwner = ownersIds.includes(interaction.user.id);
 
-      if (!isStaff && !isOwner) {
-        return interaction.editReply('❌ You do not have permission to use this command!');
+      if (!hasStaffRole && !isOwner) {
+        return interaction.editReply('❌ Only staff members can use this command!');
       }
 
       const orderId = interaction.options.getString('orderid');
-      const notes = interaction.options.getString('notes') || 'No additional notes';
+      const reason = interaction.options.getString('reason');
+      const notes = interaction.options.getString('notes') || 'No additional notes.';
 
-      // Check if order exists and is active
+      // Check if the order exists
       if (!global.activeOrders || !global.activeOrders.has(orderId)) {
-        return interaction.editReply(`❌ Order with ID \`${orderId}\` not found or not active!`);
+        return interaction.editReply(`❌ Order ID \`${orderId}\` was not found in active orders.`);
       }
 
+      // Get order data
       const orderData = global.activeOrders.get(orderId);
+      const userId = orderData.userId;
+      const product = orderData.product || 'Unknown Product';
+      const startDate = orderData.startDate || new Date();
+      const endDate = new Date();
+      const duration = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)); // Duration in days
 
-      // Get user information
-      const user1 = interaction.options.getUser('user1');
-      const duration1 = interaction.options.getInteger('duration1');
-      const user2 = interaction.options.getUser('user2');
-      const duration2 = interaction.options.getInteger('duration2');
-      const user3 = interaction.options.getUser('user3');
-      const duration3 = interaction.options.getInteger('duration3');
+      // Try to get the user
+      const user = await client.users.fetch(userId).catch(() => null);
+      const username = user ? user.tag : 'Unknown User';
 
-      // Calculate order total duration
-      const startTime = new Date(orderData.startTime);
-      const endTime = new Date();
-      const totalDurationMs = endTime - startTime;
-      const totalHours = Math.floor(totalDurationMs / (1000 * 60 * 60));
-      const totalMinutes = Math.floor((totalDurationMs % (1000 * 60 * 60)) / (1000 * 60));
-
-      // Prepare user duration fields
-      const userFields = [];
-
-      userFields.push({
-        name: `**${user1.username}'s Duration**`,
-        value: `\`${Math.floor(duration1 / 60)}h ${duration1 % 60}m\``,
-        inline: true
-      });
-
-      if (user2 && duration2) {
-        userFields.push({
-          name: `**${user2.username}'s Duration**`,
-          value: `\`${Math.floor(duration2 / 60)}h ${duration2 % 60}m\``,
-          inline: true
-        });
+      // Get readable reason
+      let readableReason = '';
+      switch (reason) {
+        case 'complete':
+          readableReason = 'Service completed successfully';
+          break;
+        case 'expired':
+          readableReason = 'Service duration expired';
+          break;
+        case 'cancelled':
+          readableReason = 'Cancelled at customer request';
+          break;
+        case 'tos_violation':
+          readableReason = 'Cancelled due to Terms of Service violation';
+          break;
+        case 'payment_issue':
+          readableReason = 'Cancelled due to payment issue';
+          break;
+        case 'other':
+          readableReason = `Other reason: ${notes}`;
+          break;
+        default:
+          readableReason = reason;
       }
 
-      if (user3 && duration3) {
-        userFields.push({
-          name: `**${user3.username}'s Duration**`,
-          value: `\`${Math.floor(duration3 / 60)}h ${duration3 % 60}m\``,
-          inline: true
-        });
-      }
-
-      // Update order in user history
-      if (global.userOrderHistory && global.userOrderHistory.has(orderData.userId)) {
-        const userHistory = global.userOrderHistory.get(orderData.userId);
-        const orderIndex = userHistory.findIndex(order => order.orderId === orderId && order.active);
-
-        if (orderIndex !== -1) {
-          userHistory[orderIndex].active = false;
-          userHistory[orderIndex].endTime = endTime;
-          userHistory[orderIndex].actualDuration = {
-            hours: totalHours,
-            minutes: totalMinutes
-          };
-          userHistory[orderIndex].completedBy = interaction.user.id;
-          userHistory[orderIndex].participantDurations = [
-            { userId: user1.id, duration: duration1 },
-            user2 ? { userId: user2.id, duration: duration2 } : null,
-            user3 ? { userId: user3.id, duration: duration3 } : null
-          ].filter(Boolean);
-          userHistory[orderIndex].notes = notes;
-
-          global.userOrderHistory.set(orderData.userId, userHistory);
-        }
-      }
-
-      // Remove from active orders
-      global.activeOrders.delete(orderId);
-
-      // Create completion embed
-      const completionEmbed = new EmbedBuilder()
+      // Create embed for order end
+      const orderEndEmbed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **ORDER COMPLETED**')
-        .setDescription(`***Order \`${orderId}\` has been completed***`)
+        .setDescription(`***Order \`${orderId}\` has been marked as completed***`)
         .addFields(
-          { name: '**Customer**', value: `<@${orderData.userId}>`, inline: true },
-          { name: '**Staff Member**', value: `${interaction.user}`, inline: true },
-          { name: '**Total Duration**', value: `\`${totalHours}h ${totalMinutes}m\``, inline: true },
-          ...userFields,
-          { name: '**Notes**', value: `\`${notes}\``, inline: false }
+          { name: '**Customer**', value: user ? `${username} (<@${userId}>)` : username, inline: true },
+          { name: '**Product**', value: product, inline: true },
+          { name: '**Duration**', value: `${duration} days`, inline: true },
+          { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
+          { name: '**Status**', value: '✅ Completed', inline: true },
+          { name: '**Reason**', value: readableReason, inline: true }
         )
         .setColor(0x9B59B6)
-        .setTimestamp()
-        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
-        .setFooter({ text: 'ERLC Alting Support' });
+        .setTimestamp();
 
-      // Prepare webhook participants field
-      const participantsField = {
-        name: '**Participants**',
-        value: `${user1} (\`${Math.floor(duration1 / 60)}h ${duration1 % 60}m\`)` +
-          (user2 ? `\n${user2} (\`${Math.floor(duration2 / 60)}h ${duration2 % 60}m\`)` : '') +
-          (user3 ? `\n${user3} (\`${Math.floor(duration3 / 60)}h ${duration3 % 60}m\`)` : ''),
-        inline: false
-      };
+      if (notes && reason !== 'other') {
+        orderEndEmbed.addFields({ name: '**Additional Notes**', value: notes, inline: false });
+      }
 
-      // Add key information if available
-      if (orderData.key) {
-        completionEmbed.addFields({ name: '**Key**', value: `\`${orderData.key}\``, inline: true });
+      // Send the embed to the channel
+      await interaction.editReply({ embeds: [orderEndEmbed] });
+
+      // Move user's ticket to appropriate category if we can
+      try {
+        // Default ticket categories
+        const generalSupportCategoryId = '1337555581199978546';
+        const unpaidCategoryId = '1337558917789519914';
+
+        // Try to find the user's ticket
+        const guild = interaction.guild;
+        const userTickets = guild.channels.cache.filter(
+          channel => 
+            channel.name.includes('order') && 
+            channel.name.includes(user ? user.username.toLowerCase() : '')
+        );
+
+        if (userTickets.size > 0) {
+          const ticketChannel = userTickets.first();
+          
+          // Determine which category to move to
+          let targetCategoryId = generalSupportCategoryId; // Default to general support
+          if (reason === 'payment_issue') {
+            targetCategoryId = unpaidCategoryId; // Move to unpaid if payment issue
+          }
+          
+          // Move the channel
+          await ticketChannel.setParent(targetCategoryId, { lockPermissions: false });
+          
+          // Log the move
+          console.log(`Moved ticket ${ticketChannel.name} to category ${targetCategoryId}`);
+        }
+      } catch (moveError) {
+        console.error('Error moving ticket to category:', moveError);
       }
 
       // Log to webhook
-      const webhookEmbed = new EmbedBuilder()
-        .setTitle('<:purplearrow:1337594384631332885> **ORDER COMPLETED**')
-        .setDescription(`***Order ID: \`${orderId}\` has been completed***`)
-        .addFields(
-          { name: '**Customer**', value: `<@${orderData.userId}>`, inline: true },
-          { name: '**Staff Member**', value: `${interaction.user}`, inline: true },
-          { name: '**Total Duration**', value: `\`${totalHours}h ${totalMinutes}m\``, inline: true },
-          { name: '**Bots Count**', value: `\`${orderData.botsCount || 'N/A'}\``, inline: true },
-          participantsField,
-          { name: '**End Time**', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
-          { name: '**Notes**', value: `\`${notes}\``, inline: false }
-        )
-        .setColor(0x9B59B6)
-        .setTimestamp()
-        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
-
-      // Add key information to webhook if available
-      if (orderData.key) {
-        webhookEmbed.addFields({ name: '**Key**', value: `\`${orderData.key}\``, inline: true });
+      try {
+        await logOrderCompletion({
+          title: 'ORDER ENDED',
+          description: `Order ${orderId} has been completed`,
+          fields: [
+            { name: 'Customer', value: user ? `${username} (<@${userId}>)` : username, inline: true },
+            { name: 'Product', value: product, inline: true },
+            { name: 'Duration', value: `${duration} days`, inline: true },
+            { name: 'Order ID', value: `\`${orderId}\``, inline: true },
+            { name: 'Status', value: '✅ Completed', inline: true },
+            { name: 'Reason', value: readableReason, inline: true },
+            { name: 'Staff Member', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true }
+          ]
+        });
+      } catch (webhookError) {
+        console.error('Error logging to webhook:', webhookError);
       }
 
-      // Send to multiple webhooks using the new function
-      const { logOrderCompletion } = require('../utils/webhook');
-      await logOrderCompletion({
-        title: 'ORDER COMPLETED',
-        description: `Order ID: \`${orderId}\` has been completed`,
-        fields: [
-          { name: 'Customer', value: `<@${orderData.userId}>`, inline: true },
-          { name: 'Staff Member', value: `${interaction.user}`, inline: true },
-          { name: 'Total Duration', value: `\`${totalHours}h ${totalMinutes}m\``, inline: true },
-          { name: 'Bots Count', value: `\`${orderData.botsCount || 'N/A'}\``, inline: true },
-          participantsField,
-          { name: 'End Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
-          { name: 'Notes', value: `\`${notes}\``, inline: false },
-          orderData.key ? { name: 'Key', value: `\`${orderData.key}\``, inline: true } : null
-        ].filter(field => field !== null) // Remove null fields
-      });
+      // Try to notify the user
+      if (user) {
+        try {
+          const userEmbed = new EmbedBuilder()
+            .setTitle('<:purplearrow:1337594384631332885> **YOUR ORDER HAS ENDED**')
+            .setDescription(`***Your order with ID \`${orderId}\` has been completed***`)
+            .addFields(
+              { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
+              { name: '**Product**', value: product, inline: true },
+              { name: '**Status**', value: '✅ Completed', inline: true },
+              { name: '**Reason**', value: readableReason, inline: false },
+              { name: '**<:PurpleLine:1336946927282950165> Need Help?**', value: 'If you need any further assistance, please open a support ticket.' }
+            )
+            .setColor(0x9B59B6)
+            .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
+            .setTimestamp();
 
-      // Send success message
-      await interaction.editReply({ embeds: [completionEmbed] });
+          await user.send({ embeds: [userEmbed] }).catch(() => {
+            console.log(`Could not send DM to user ${userId}`);
+          });
+        } catch (dmError) {
+          console.error('Error sending DM:', dmError);
+        }
+      }
+
+      // Remove from active orders map
+      global.activeOrders.delete(orderId);
+
+      // Add to order history
+      if (!global.userOrderHistory) {
+        global.userOrderHistory = new Map();
+      }
+      
+      const userHistory = global.userOrderHistory.get(userId) || [];
+      userHistory.push({
+        orderId,
+        product,
+        startDate,
+        endDate,
+        reason: readableReason,
+        staffId: interaction.user.id
+      });
+      global.userOrderHistory.set(userId, userHistory);
 
     } catch (error) {
-      console.error('Error completing order:', error);
-      await interaction.editReply('❌ There was an error completing the order! Please try again or contact an administrator.');
+      console.error('Error ending order:', error);
+      await interaction.editReply('❌ There was an error ending the order! Please try again or contact an administrator.');
     }
   }
 };
