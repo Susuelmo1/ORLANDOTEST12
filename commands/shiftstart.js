@@ -1,14 +1,10 @@
-
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { sendWebhook } = require('../utils/webhook');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('shiftstart')
-    .setDescription('Start a new alting shift')
-    .addUserOption(option => 
-      option.setName('user')
-        .setDescription('User to start shift for (default: yourself)')
-        .setRequired(false)),
+    .setDescription('Start your staff shift and track your activity'),
 
   async execute(interaction, client) {
     await interaction.deferReply();
@@ -23,74 +19,63 @@ module.exports = {
         return interaction.editReply('❌ You do not have permission to use this command!');
       }
 
-      // Get the target user (either mentioned user or self)
-      const targetUser = interaction.options.getUser('user') || interaction.user;
-      
-      // Initialize shifts data structure if not exists
+      // Initialize staff shifts tracking
       if (!global.staffShifts) {
         global.staffShifts = new Map();
       }
-      
-      // Check if user already has an active shift
-      const existingShift = global.staffShifts.get(targetUser.id);
-      if (existingShift && existingShift.active) {
-        return interaction.editReply(`❌ ${targetUser.id === interaction.user.id ? 'You already have' : `${targetUser.tag} already has`} an active shift! Use \`/shiftend\` to end it first.`);
+
+      // Check if staff is already on shift
+      if (global.staffShifts.has(interaction.user.id)) {
+        const staffData = global.staffShifts.get(interaction.user.id);
+        if (staffData.active) {
+          return interaction.editReply('❌ You are already on an active shift! Use `/shiftend` to end your current shift first.');
+        }
       }
-      
-      // Create new shift
+
+      // Create shift data
       const shiftData = {
-        userId: targetUser.id,
-        startTime: new Date(),
         active: true,
-        createdBy: interaction.user.id,
+        startTime: new Date(),
         totals: {
           orders: 0,
           botsDeployed: 0
         }
       };
-      
-      global.staffShifts.set(targetUser.id, shiftData);
-      
-      // Create success embed
+
+      // Store shift data
+      global.staffShifts.set(interaction.user.id, shiftData);
+
+      // Create shift start embed
       const shiftEmbed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **SHIFT STARTED**')
-        .setDescription(`***${targetUser.id === interaction.user.id ? 'Your' : `${targetUser}'s`} alting shift has been started***`)
+        .setDescription(`***${interaction.user} has started their shift***`)
         .addFields(
-          { name: '**Staff Member**', value: `${targetUser}`, inline: true },
           { name: '**Start Time**', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
           { name: '**Status**', value: '✅ **Active**', inline: true }
         )
         .setColor(0x9B59B6)
         .setTimestamp()
-        .setFooter({ text: 'ERLC Alting Shift System' });
-      
-      // Log to webhook
-      try {
-        const { WebhookClient } = require('discord.js');
-        const webhook = new WebhookClient({ url: 'https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML' });
-        
-        const webhookEmbed = new EmbedBuilder()
-          .setTitle('🕒 Shift Started')
-          .setDescription(`${targetUser} has started an alting shift`)
-          .addFields(
-            { name: 'Staff Member', value: `${targetUser}`, inline: true },
-            { name: 'Started By', value: `<@${interaction.user.id}>`, inline: true },
-            { name: 'Start Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
-          )
-          .setColor(0x00FF00)
-          .setTimestamp();
-        
-        await webhook.send({ embeds: [webhookEmbed] });
-      } catch (webhookError) {
-        console.error('Error sending webhook:', webhookError);
-      }
-      
-      // Send confirmation
+        .setFooter({ text: 'ERLC Alting Support' });
+
+      // Send to webhook
+      const webhookEmbed = new EmbedBuilder()
+        .setTitle('🟢 Staff Shift Started')
+        .setDescription(`${interaction.user.tag} has started their shift`)
+        .addFields(
+          { name: 'Staff Member', value: `<@${interaction.user.id}>`, inline: true },
+          { name: 'Start Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true }
+        )
+        .setColor(0x00FF00)
+        .setTimestamp();
+
+      sendWebhook('https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML', { embeds: [webhookEmbed] });
+
+      // Send success message
       await interaction.editReply({ embeds: [shiftEmbed] });
-      
+
     } catch (error) {
       console.error('Error starting shift:', error);
-      await interaction.editReply('❌ There was an error starting the shift! Please try again or contact an administrator.');
+      await interaction.editReply('❌ There was an error starting your shift! Please try again or contact an administrator.');
     }
   }
 };

@@ -1,30 +1,17 @@
-
-const { WebhookClient, EmbedBuilder } = require('discord.js');
-
-// Store webhook clients
-const webhookClients = new Map();
+const { WebhookClient } = require('discord.js');
 
 /**
- * Get or initialize a webhook client
- * @param {string} url - The webhook URL
- * @returns {WebhookClient|null} The webhook client or null if URL is invalid
+ * Send a message to a Discord webhook
+ * @param {string} webhookUrl - The webhook URL
+ * @param {Object} data - The data to send to the webhook
+ * @returns {Promise<void>}
  */
-function getWebhookClient(url) {
-  if (!url) return null;
-  
-  // Return existing client if already created
-  if (webhookClients.has(url)) {
-    return webhookClients.get(url);
-  }
-  
-  // Create new client
+async function sendWebhook(webhookUrl, data) {
   try {
-    const client = new WebhookClient({ url });
-    webhookClients.set(url, client);
-    return client;
+    const webhook = new WebhookClient({ url: webhookUrl });
+    await webhook.send(data);
   } catch (error) {
-    console.error('Error initializing webhook client:', error);
-    return null;
+    console.error('Error sending webhook:', error);
   }
 }
 
@@ -39,38 +26,33 @@ function getWebhookClient(url) {
  * @param {string} options.thumbnail - URL for thumbnail image
  * @param {string} options.image - URL for main image
  * @param {Object} options.footer - Footer object with text property
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>}
  */
 async function logToWebhook(options) {
-  const webhook = getWebhookClient(options.webhookUrl || process.env.LOG_WEBHOOK_URL);
-  if (!webhook) return;
-  
+  if (!options.webhookUrl) return false;
+
   try {
-    const embed = new EmbedBuilder()
-      .setTitle(options.title || 'Log Event')
-      .setDescription(options.description || '')
-      .setColor(options.color || 0x9B59B6)
-      .setTimestamp();
-    
+    const embed = {
+      title: options.title || 'Log Event',
+      description: options.description || '',
+      color: options.color || 0x9B59B6,
+      timestamp: new Date(),
+      footer: options.footer || { text: 'ERLC Alting Support' },
+    };
+
     if (options.fields && Array.isArray(options.fields)) {
-      embed.addFields(...options.fields);
+      embed.fields = options.fields;
     }
-    
+
     if (options.thumbnail) {
-      embed.setThumbnail(options.thumbnail);
+      embed.thumbnail = { url: options.thumbnail };
     }
-    
+
     if (options.image) {
-      embed.setImage(options.image);
+      embed.image = { url: options.image };
     }
-    
-    if (options.footer) {
-      embed.setFooter(options.footer);
-    } else {
-      embed.setFooter({ text: 'ERLC Alting Support' });
-    }
-    
-    await webhook.send({ embeds: [embed] });
+
+    await sendWebhook(options.webhookUrl, { embeds: [embed] });
     return true;
   } catch (error) {
     console.error('Error sending webhook log:', error);
@@ -80,6 +62,7 @@ async function logToWebhook(options) {
 
 /**
  * Send order logs to the order webhook
+ *This function is kept for backward compatibility, but using sendWebhook directly is recommended.
  */
 async function logOrder(options) {
   return logToWebhook({
@@ -89,7 +72,7 @@ async function logOrder(options) {
 }
 
 module.exports = {
+  sendWebhook,
   logToWebhook,
-  logOrder,
-  getWebhookClient
+  logOrder
 };

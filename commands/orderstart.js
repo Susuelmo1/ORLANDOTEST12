@@ -1,25 +1,13 @@
-
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { sendWebhook } = require('../utils/webhook');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('orderstart')
-    .setDescription('Start service using a generated key and order ID')
-    .addStringOption(option => 
-      option.setName('key')
-        .setDescription('The generated key to activate')
-        .setRequired(true))
-    .addStringOption(option => 
-      option.setName('orderid')
-        .setDescription('The order ID to activate')
-        .setRequired(true))
+    .setDescription('Start service for a customer')
     .addUserOption(option => 
       option.setName('user')
         .setDescription('User to activate the service for')
-        .setRequired(true))
-    .addIntegerOption(option =>
-      option.setName('time')
-        .setDescription('Duration in days (e.g., 7, 30, 365 for lifetime)')
         .setRequired(true))
     .addIntegerOption(option =>
       option.setName('bots')
@@ -39,10 +27,7 @@ module.exports = {
         return interaction.editReply('❌ You do not have permission to use this command!');
       }
 
-      const key = interaction.options.getString('key');
-      const orderId = interaction.options.getString('orderid');
       const targetUser = interaction.options.getUser('user');
-      const time = interaction.options.getInteger('time');
       const botsCount = interaction.options.getInteger('bots');
 
       // Get the target member
@@ -63,26 +48,23 @@ module.exports = {
         }
       }
 
+      // Generate order ID
+      const orderId = `ORDER-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`;
+
       // Store order start time
       if (!global.activeOrders) {
         global.activeOrders = new Map();
       }
-      
+
       const orderData = {
         userId: targetUser.id,
         startTime: new Date(),
-        duration: time * 24 * 60 * 60 * 1000, // Convert days to milliseconds
         orderId: orderId,
-        key: key,
         botsCount: botsCount,
         staffId: interaction.user.id
       };
-      
-      global.activeOrders.set(orderId, orderData);
 
-      // Calculate queue position (simulated)
-      const queueNumber = Math.floor(Math.random() * 3) + 1;
-      await interaction.channel.send(`${targetUser}, your order has been activated! You are queued as number ${queueNumber}. Estimated wait: ${Math.ceil(queueNumber * 2)} minutes.`);
+      global.activeOrders.set(orderId, orderData);
 
       // Log to order history
       if (!global.userOrderHistory) {
@@ -92,9 +74,7 @@ module.exports = {
       const userHistory = global.userOrderHistory.get(targetUser.id) || [];
       userHistory.push({
         orderId: orderId,
-        key: key,
         startTime: new Date(),
-        duration: time,
         botsCount: botsCount,
         staffId: interaction.user.id,
         active: true
@@ -106,10 +86,8 @@ module.exports = {
         .setTitle('<:purplearrow:1337594384631332885> **SERVICE ACTIVATED**')
         .setDescription(`***Service has been successfully activated for ${targetUser}***`)
         .addFields(
-          { name: '**Key Used**', value: `\`${key}\``, inline: true },
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
           { name: '**Bots Count**', value: `\`${botsCount}\``, inline: true },
-          { name: '**Duration**', value: `\`${time} days\``, inline: true },
           { name: '**Status**', value: '✅ **Active**', inline: true }
         )
         .setColor(0x9B59B6)
@@ -117,42 +95,23 @@ module.exports = {
         .setFooter({ text: 'ERLC Alting Support' });
 
       // Send logs to the dedicated webhook
-      try {
-        const { WebhookClient } = require('discord.js');
-        const orderWebhook = new WebhookClient({ url: 'https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML' });
-        
-        const webhookEmbed = new EmbedBuilder()
-          .setTitle('🚀 New Order Started')
-          .setDescription(`Order has been started for ${targetUser}`)
-          .addFields(
-            { name: 'Order ID', value: orderId, inline: true },
-            { name: 'Bots Count', value: `${botsCount}`, inline: true },
-            { name: 'Duration', value: `${time} days`, inline: true },
-            { name: 'Staff Member', value: `<@${interaction.user.id}>`, inline: true },
-            { name: 'Start Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
-          )
-          .setColor(0x00FF00)
-          .setTimestamp();
-        
-        await orderWebhook.send({ embeds: [webhookEmbed] });
-      } catch (webhookError) {
-        console.error('Error sending to order webhook:', webhookError);
-      }
-
-      // Send instruction message for ERLC game joining
-      const instructionEmbed = new EmbedBuilder()
-        .setTitle('🎮 ERLC Bot Instructions')
-        .setDescription(`**The system will now join ${botsCount} bots to your ERLC server**`)
+      const webhookEmbed = new EmbedBuilder()
+        .setTitle('🚀 New Order Started')
+        .setDescription(`Order has been started for ${targetUser}`)
         .addFields(
-          { name: '📋 Next Steps', value: 'Please provide your private server code in the channel to complete the process.' },
-          { name: '⏱️ Expected Time', value: `Your bots will join within approximately ${Math.ceil(botsCount / 5)} minutes.` },
-          { name: '❓ Support', value: 'If you encounter any issues, please contact staff for assistance.' }
+          { name: 'Order ID', value: orderId, inline: true },
+          { name: 'Bots Count', value: `${botsCount}`, inline: true },
+          { name: 'Staff Member', value: `<@${interaction.user.id}>`, inline: true },
+          { name: 'Start Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
         )
-        .setColor(0x9B59B6);
+        .setColor(0x00FF00)
+        .setTimestamp();
+
+      // Send to webhook
+      sendWebhook('https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML', { embeds: [webhookEmbed] });
 
       // Send success message in the channel
       await interaction.editReply({ embeds: [successEmbed] });
-      await interaction.channel.send({ embeds: [instructionEmbed] });
 
     } catch (error) {
       console.error('Error activating service:', error);

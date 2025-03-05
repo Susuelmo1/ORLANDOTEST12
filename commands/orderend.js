@@ -1,5 +1,6 @@
 
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { sendWebhook } = require('../utils/webhook');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,17 +10,30 @@ module.exports = {
       option.setName('orderid')
         .setDescription('The order ID to complete')
         .setRequired(true))
+    .addUserOption(option => 
+      option.setName('user1')
+        .setDescription('First user to log time for')
+        .setRequired(true))
     .addIntegerOption(option =>
-      option.setName('satisfaction')
-        .setDescription('Customer satisfaction rating (1-5)')
-        .setRequired(true)
-        .addChoices(
-          { name: '⭐ Poor', value: 1 },
-          { name: '⭐⭐ Fair', value: 2 },
-          { name: '⭐⭐⭐ Good', value: 3 },
-          { name: '⭐⭐⭐⭐ Very Good', value: 4 },
-          { name: '⭐⭐⭐⭐⭐ Excellent', value: 5 }
-        ))
+      option.setName('duration1')
+        .setDescription('Duration in minutes for user 1')
+        .setRequired(true))
+    .addUserOption(option => 
+      option.setName('user2')
+        .setDescription('Second user to log time for (optional)')
+        .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('duration2')
+        .setDescription('Duration in minutes for user 2')
+        .setRequired(false))
+    .addUserOption(option => 
+      option.setName('user3')
+        .setDescription('Third user to log time for (optional)')
+        .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('duration3')
+        .setDescription('Duration in minutes for user 3')
+        .setRequired(false))
     .addStringOption(option =>
       option.setName('notes')
         .setDescription('Additional notes about the order completion')
@@ -39,7 +53,6 @@ module.exports = {
       }
 
       const orderId = interaction.options.getString('orderid');
-      const satisfaction = interaction.options.getInteger('satisfaction');
       const notes = interaction.options.getString('notes') || 'No additional notes';
 
       // Check if order exists and is active
@@ -48,87 +61,116 @@ module.exports = {
       }
 
       const orderData = global.activeOrders.get(orderId);
-      const targetUserId = orderData.userId;
       
-      // Calculate duration
+      // Get user information
+      const user1 = interaction.options.getUser('user1');
+      const duration1 = interaction.options.getInteger('duration1');
+      const user2 = interaction.options.getUser('user2');
+      const duration2 = interaction.options.getInteger('duration2');
+      const user3 = interaction.options.getUser('user3');
+      const duration3 = interaction.options.getInteger('duration3');
+      
+      // Calculate order total duration
       const startTime = new Date(orderData.startTime);
       const endTime = new Date();
-      const durationMs = endTime - startTime;
-      const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
-      const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+      const totalDurationMs = endTime - startTime;
+      const totalHours = Math.floor(totalDurationMs / (1000 * 60 * 60));
+      const totalMinutes = Math.floor((totalDurationMs % (1000 * 60 * 60)) / (1000 * 60));
+      
+      // Prepare user duration fields
+      const userFields = [];
+      
+      userFields.push({
+        name: `**${user1.username}'s Duration**`,
+        value: `\`${Math.floor(duration1 / 60)}h ${duration1 % 60}m\``,
+        inline: true
+      });
+      
+      if (user2 && duration2) {
+        userFields.push({
+          name: `**${user2.username}'s Duration**`,
+          value: `\`${Math.floor(duration2 / 60)}h ${duration2 % 60}m\``,
+          inline: true
+        });
+      }
+      
+      if (user3 && duration3) {
+        userFields.push({
+          name: `**${user3.username}'s Duration**`,
+          value: `\`${Math.floor(duration3 / 60)}h ${duration3 % 60}m\``,
+          inline: true
+        });
+      }
       
       // Update order in user history
-      if (global.userOrderHistory && global.userOrderHistory.has(targetUserId)) {
-        const userHistory = global.userOrderHistory.get(targetUserId);
+      if (global.userOrderHistory && global.userOrderHistory.has(orderData.userId)) {
+        const userHistory = global.userOrderHistory.get(orderData.userId);
         const orderIndex = userHistory.findIndex(order => order.orderId === orderId && order.active);
         
         if (orderIndex !== -1) {
           userHistory[orderIndex].active = false;
           userHistory[orderIndex].endTime = endTime;
           userHistory[orderIndex].actualDuration = {
-            hours: durationHours,
-            minutes: durationMinutes
+            hours: totalHours,
+            minutes: totalMinutes
           };
-          userHistory[orderIndex].satisfaction = satisfaction;
           userHistory[orderIndex].completedBy = interaction.user.id;
+          userHistory[orderIndex].participantDurations = [
+            { userId: user1.id, duration: duration1 },
+            user2 ? { userId: user2.id, duration: duration2 } : null,
+            user3 ? { userId: user3.id, duration: duration3 } : null
+          ].filter(Boolean);
           userHistory[orderIndex].notes = notes;
           
-          global.userOrderHistory.set(targetUserId, userHistory);
+          global.userOrderHistory.set(orderData.userId, userHistory);
         }
       }
       
       // Remove from active orders
       global.activeOrders.delete(orderId);
       
-      // Update shift stats if applicable
-      if (global.staffShifts && global.staffShifts.has(interaction.user.id)) {
-        const shiftData = global.staffShifts.get(interaction.user.id);
-        if (shiftData.active) {
-          shiftData.totals.orders += 1;
-          shiftData.totals.botsDeployed += orderData.botsCount || 0;
-          global.staffShifts.set(interaction.user.id, shiftData);
-        }
-      }
-
       // Create completion embed
       const completionEmbed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **ORDER COMPLETED**')
         .setDescription(`***Order \`${orderId}\` has been completed***`)
         .addFields(
-          { name: '**Customer**', value: `<@${targetUserId}>`, inline: true },
+          { name: '**Customer**', value: `<@${orderData.userId}>`, inline: true },
           { name: '**Staff Member**', value: `${interaction.user}`, inline: true },
-          { name: '**Duration**', value: `${durationHours}h ${durationMinutes}m`, inline: true },
-          { name: '**Satisfaction**', value: '⭐'.repeat(satisfaction), inline: true },
+          { name: '**Total Duration**', value: `${totalHours}h ${totalMinutes}m`, inline: true },
+          ...userFields,
           { name: '**Notes**', value: notes, inline: false }
         )
         .setColor(0x9B59B6)
         .setTimestamp()
         .setFooter({ text: 'ERLC Alting Support' });
 
+      // Prepare webhook participants field
+      const participantsField = {
+        name: 'Participants',
+        value: `${user1} (${Math.floor(duration1 / 60)}h ${duration1 % 60}m)` +
+          (user2 ? `\n${user2} (${Math.floor(duration2 / 60)}h ${duration2 % 60}m)` : '') +
+          (user3 ? `\n${user3} (${Math.floor(duration3 / 60)}h ${duration3 % 60}m)` : ''),
+        inline: false
+      };
+
       // Log to webhook
-      try {
-        const { WebhookClient } = require('discord.js');
-        const orderWebhook = new WebhookClient({ url: 'https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML' });
-        
-        const webhookEmbed = new EmbedBuilder()
-          .setTitle('✅ Order Completed')
-          .setDescription(`Order ID: \`${orderId}\` has been completed`)
-          .addFields(
-            { name: 'Customer', value: `<@${targetUserId}>`, inline: true },
-            { name: 'Staff Member', value: `${interaction.user}`, inline: true },
-            { name: 'Satisfaction', value: '⭐'.repeat(satisfaction), inline: true },
-            { name: 'Duration', value: `${durationHours}h ${durationMinutes}m`, inline: true },
-            { name: 'Bots Count', value: `${orderData.botsCount || 'N/A'}`, inline: true },
-            { name: 'End Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
-            { name: 'Notes', value: notes, inline: false }
-          )
-          .setColor(0x00FFAA)
-          .setTimestamp();
-        
-        await orderWebhook.send({ embeds: [webhookEmbed] });
-      } catch (webhookError) {
-        console.error('Error sending to order webhook:', webhookError);
-      }
+      const webhookEmbed = new EmbedBuilder()
+        .setTitle('✅ Order Completed')
+        .setDescription(`Order ID: \`${orderId}\` has been completed`)
+        .addFields(
+          { name: 'Customer', value: `<@${orderData.userId}>`, inline: true },
+          { name: 'Staff Member', value: `${interaction.user}`, inline: true },
+          { name: 'Total Duration', value: `${totalHours}h ${totalMinutes}m`, inline: true },
+          { name: 'Bots Count', value: `${orderData.botsCount || 'N/A'}`, inline: true },
+          participantsField,
+          { name: 'End Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
+          { name: 'Notes', value: notes, inline: false }
+        )
+        .setColor(0x00FFAA)
+        .setTimestamp();
+      
+      // Send to webhook
+      sendWebhook('https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML', { embeds: [webhookEmbed] });
 
       // Send success message
       await interaction.editReply({ embeds: [completionEmbed] });

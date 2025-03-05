@@ -424,6 +424,45 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
       });
     }
 
+    // Add claim button for staff
+    const claimButton = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('claim_ticket')
+          .setLabel('Claim Ticket')
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('👤')
+      );
+
+    // Send claim button message
+    await ticketChannel.send({
+      content: '**<:purplearrow:1337594384631332885> Staff members can claim this ticket:**',
+      components: [claimButton]
+    });
+
+    // Log to webhook if configured
+    try {
+      const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
+      const { WebhookClient } = require('discord.js');
+      const webhook = new WebhookClient({ url: webhookUrl });
+
+      const logEmbed = new EmbedBuilder()
+        .setTitle('New Ticket Created')
+        .setDescription(`A new ${ticketType} ticket has been created`)
+        .addFields(
+          { name: 'User', value: `${user.tag} (<@${user.id}>)`, inline: true },
+          { name: 'Ticket Type', value: ticketType.charAt(0).toUpperCase() + ticketType.slice(1), inline: true },
+          { name: 'Queue Position', value: `#${queuePosition}`, inline: true },
+          { name: 'Channel', value: `<#${ticketChannel.id}>`, inline: false }
+        )
+        .setColor(0x9B59B6)
+        .setTimestamp();
+
+      await webhook.send({ embeds: [logEmbed] });
+    } catch (webhookError) {
+      console.error('Error sending webhook:', webhookError);
+    }
+
     // Ping the user and staff role in the ticket
     await ticketChannel.send(`${user} <@&${staffRoleId}>`);
 
@@ -449,27 +488,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
     global.ticketStats.byUser.set(user.id, userStats);
 
     // Log to webhook if configured
-    try {
-      const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
-      const { WebhookClient } = require('discord.js');
-      const webhook = new WebhookClient({ url: webhookUrl });
-
-      const logEmbed = new EmbedBuilder()
-        .setTitle('New Ticket Created')
-        .setDescription(`A new ${ticketType} ticket has been created`)
-        .addFields(
-          { name: 'User', value: `${user.tag} (<@${user.id}>)`, inline: true },
-          { name: 'Ticket Type', value: ticketType.charAt(0).toUpperCase() + ticketType.slice(1), inline: true },
-          { name: 'Queue Position', value: `#${queuePosition}`, inline: true },
-          { name: 'Channel', value: `<#${ticketChannel.id}>`, inline: false }
-        )
-        .setColor(0x9B59B6)
-        .setTimestamp();
-
-      await webhook.send({ embeds: [logEmbed] });
-    } catch (webhookError) {
-      console.error('Error sending webhook:', webhookError);
-    }
+    
 
     // Handle DM context
     if (fromDM) {
@@ -749,15 +768,15 @@ client.on('interactionCreate', async interaction => {
 
           // Log ticket closing
           await channel.send({ embeds: [closingEmbed] });
-          
+
           // Add a delay before deleting the channel
           await interaction.editReply('✅ Ticket will be closed in 5 seconds.');
-          
+
           // Remove from active tickets map
           if (global.activeTickets && global.activeTickets.has(channel.id)) {
             global.activeTickets.delete(channel.id);
           }
-          
+
           // Delete the channel after 5 seconds
           setTimeout(async () => {
             try {
@@ -814,12 +833,12 @@ client.on('interactionCreate', async interaction => {
         try {
           const product = interaction.customId.replace('product_', '');
           const channel = interaction.channel;
-          
+
           // Store the product selection for this ticket
           if (!global.activeTickets.has(channel.id)) {
             global.activeTickets.set(channel.id, {});
           }
-          
+
           const ticketData = global.activeTickets.get(channel.id);
           ticketData.selectedProduct = product;
           global.activeTickets.set(channel.id, ticketData);
@@ -827,7 +846,7 @@ client.on('interactionCreate', async interaction => {
           // Create product information embed based on selection
           let productInfo = '';
           let productPrice = '';
-          
+
           switch (product) {
             case '10_deal':
               productInfo = '10 Bots - Weekly Access';
@@ -921,6 +940,77 @@ client.on('interactionCreate', async interaction => {
         } catch (error) {
           console.error('Error with product selection:', error);
           await interaction.editReply('❌ There was an error with your product selection!');
+        }
+      }
+
+      // Claim ticket button
+      else if (interaction.customId === 'claim_ticket') {
+        await interaction.deferReply({ ephemeral: true });
+
+        try {
+          const channel = interaction.channel;
+          const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164';
+
+          // Check if the user has the staff role
+          const member = interaction.guild.members.cache.get(interaction.user.id);
+          if (!member.roles.cache.has(staffRoleId)) {
+            return interaction.editReply('❌ You do not have permission to claim this ticket!');
+          }
+
+          // Update ticket data with claim information
+          if (global.activeTickets.has(channel.id)) {
+            const ticketData = global.activeTickets.get(channel.id);
+            ticketData.claimedBy = interaction.user.id;
+            ticketData.claimedAt = new Date();
+            global.activeTickets.set(channel.id, ticketData);
+          }
+
+          // Send claim confirmation
+          const claimEmbed = new EmbedBuilder()
+            .setTitle('<:purplearrow:1337594384631332885> **TICKET CLAIMED**')
+            .setDescription(`This ticket has been claimed by ${interaction.user.tag}`)
+            .setColor(0x9B59B6)
+            .setTimestamp();
+
+          await channel.send({ embeds: [claimEmbed] });
+          await interaction.editReply('✅ Ticket claimed successfully!');
+
+          // Disable the claim button
+          await interaction.channel.send({
+            components: [new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId('claim_ticket')
+                .setLabel('Claim Ticket')
+                .setStyle(ButtonStyle.Success)
+                .setEmoji('👤')
+                .setDisabled(true)
+            )]
+          });
+
+          // Log to webhook
+          try {
+            const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
+            const { WebhookClient } = require('discord.js');
+            const webhook = new WebhookClient({ url: webhookUrl });
+
+            const logEmbed = new EmbedBuilder()
+              .setTitle('Ticket Claimed')
+              .setDescription(`Ticket ${channel.name} has been claimed by ${interaction.user.tag}`)
+              .addFields(
+                { name: 'Claimed By', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+                { name: 'Channel', value: `<#${channel.id}>`, inline: false }
+              )
+              .setColor(0x9B59B6)
+              .setTimestamp();
+
+            await webhook.send({ embeds: [logEmbed] });
+          } catch (webhookError) {
+            console.error('Error sending webhook:', webhookError);
+          }
+
+        } catch (error) {
+          console.error('Error claiming ticket:', error);
+          await interaction.editReply('❌ There was an error claiming this ticket!');
         }
       }
 
