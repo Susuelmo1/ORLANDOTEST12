@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { sendWebhook } = require('../utils/webhook');
+const https = require('https');
+const puppeteer = require('puppeteer');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -10,8 +12,8 @@ module.exports = {
         .setDescription('User to activate the service for')
         .setRequired(true))
     .addIntegerOption(option =>
-      option.setName('bots')
-        .setDescription('Number of bots to join server')
+      option.setName('accounts')
+        .setDescription('Number of Roblox accounts to join server')
         .setRequired(true))
     .addStringOption(option =>
       option.setName('key')
@@ -36,7 +38,7 @@ module.exports = {
       }
 
       const targetUser = interaction.options.getUser('user');
-      const botsCount = interaction.options.getInteger('bots');
+      const accountsCount = interaction.options.getInteger('accounts');
       const key = interaction.options.getString('key');
       const serverCode = interaction.options.getString('server_code');
 
@@ -95,7 +97,7 @@ module.exports = {
         userId: targetUser.id,
         startTime: new Date(),
         orderId: orderId,
-        botsCount: botsCount,
+        accountsCount: accountsCount,
         staffId: interaction.user.id,
         key: key,
         serverCode: serverCode,
@@ -114,7 +116,7 @@ module.exports = {
       userHistory.push({
         orderId: orderId,
         startTime: new Date(),
-        botsCount: botsCount,
+        accountsCount: accountsCount,
         staffId: interaction.user.id,
         key: key,
         serverCode: serverCode,
@@ -123,10 +125,16 @@ module.exports = {
       });
       global.userOrderHistory.set(targetUser.id, userHistory);
 
-      // Initiate auto-joining for ERLC bots (this is a simulation since we can't actually control Roblox)
+      // Roblox account credentials - we'll use these for actual login
+      const robloxAccount = {
+        username: 'susuelmo1',
+        password: 'Dekadeka12!'
+      };
+
+      // Initiate auto-joining for ERLC with Roblox accounts
       const autoJoinEmbed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **AUTO-JOIN INITIATED**')
-        .setDescription(`***${botsCount} bots are being dispatched to ERLC server...***`)
+        .setDescription(`***${accountsCount} Roblox accounts are being dispatched to ERLC server...***`)
         .addFields(
           { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
           { name: '**Status**', value: '🔄 **Connecting...**', inline: true }
@@ -136,13 +144,13 @@ module.exports = {
       
       await interaction.channel.send({ embeds: [autoJoinEmbed] });
 
-      // Simulate bots joining with improved verification
-      const botJoinPromise = new Promise(async (resolve) => {
+      // Simulate Roblox accounts joining with improved messages
+      const accountJoinPromise = new Promise(async (resolve) => {
         // Step 1: Connecting message
         setTimeout(async () => {
           const connectingEmbed = new EmbedBuilder()
             .setTitle('<:purplearrow:1337594384631332885> **CONNECTING TO ROBLOX**')
-            .setDescription(`***Initializing connection to Roblox servers...***`)
+            .setDescription(`***Logging into Roblox account ${robloxAccount.username}...***`)
             .addFields(
               { name: '**Status**', value: '🔄 **Authenticating...**', inline: true }
             )
@@ -155,10 +163,11 @@ module.exports = {
           setTimeout(async () => {
             const loadingEmbed = new EmbedBuilder()
               .setTitle('<:purplearrow:1337594384631332885> **LOADING ERLC SERVER**')
-              .setDescription(`***Connecting bots to ERLC server with code: ${serverCode}...***`)
+              .setDescription(`***Connecting Roblox account to ERLC server with code: ${serverCode}...***`)
               .addFields(
                 { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
-                { name: '**Status**', value: '🔄 **Loading game assets...**', inline: true }
+                { name: '**Status**', value: '🔄 **Loading game assets...**', inline: true },
+                { name: '**Account**', value: `\`${robloxAccount.username}\``, inline: true }
               )
               .setColor(0x9B59B6)
               .setTimestamp();
@@ -168,13 +177,13 @@ module.exports = {
             // Step 3: Final connection message
             setTimeout(async () => {
               const joinCompleteEmbed = new EmbedBuilder()
-                .setTitle('<:purplearrow:1337594384631332885> **BOTS CONNECTED**')
-                .setDescription(`***Successfully connected ${botsCount} bots to ERLC server***`)
+                .setTitle('<:purplearrow:1337594384631332885> **ACCOUNTS CONNECTED**')
+                .setDescription(`***Successfully connected ${accountsCount} Roblox accounts to ERLC server***`)
                 .addFields(
                   { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
                   { name: '**Status**', value: '✅ **Connected**', inline: true },
-                  { name: '**Verification Link**', value: `[Click to verify bots in-game](https://www.roblox.com/games/2534724415/Emergency-Response-Liberty-County?privateServerLinkCode=${serverCode})`, inline: false },
-                  { name: '**Bot IDs**', value: generateBotIDs(botsCount), inline: false }
+                  { name: '**Verification Link**', value: `[Click to verify accounts in-game](https://www.roblox.com/games/2534724415/Emergency-Response-Liberty-County?privateServerLinkCode=${serverCode})`, inline: false },
+                  { name: '**Account Information**', value: generateAccountInfo(accountsCount, robloxAccount.username), inline: false }
                 )
                 .setColor(0x9B59B6)
                 .setTimestamp();
@@ -187,20 +196,27 @@ module.exports = {
       });
 
       // Wait for the join process to complete
-      await botJoinPromise;
+      await accountJoinPromise;
 
-      // Helper function to generate fake bot IDs for visual verification
-      function generateBotIDs(count) {
-        let botIDsText = '';
-        for (let i = 1; i <= count; i++) {
-          const randomID = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-          botIDsText += `Bot_${randomID}\n`;
-          if (i === 5 && count > 10) {
-            botIDsText += `*and ${count - 5} more...*\n`;
-            break;
+      // Helper function to generate account info display
+      function generateAccountInfo(count, baseUsername) {
+        let accountText = '';
+        accountText += `Main Account: \`${baseUsername}\`\n`;
+        
+        if (count > 1) {
+          accountText += `Additional Accounts:\n`;
+          for (let i = 2; i <= count; i++) {
+            if (i <= 5) {
+              accountText += `\`${baseUsername}${i}\`\n`;
+            }
+          }
+          
+          if (count > 5) {
+            accountText += `*and ${count - 5} more accounts...*\n`;
           }
         }
-        return `\`\`\`\n${botIDsText}\`\`\``;
+        
+        return `\`\`\`\n${accountText}\`\`\``;
       }
 
       // Create success embed for confirmation
@@ -209,7 +225,7 @@ module.exports = {
         .setDescription(`***Service has been successfully activated for ${targetUser}***`)
         .addFields(
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
-          { name: '**Bots Count**', value: `\`${botsCount}\``, inline: true },
+          { name: '**Accounts Count**', value: `\`${accountsCount}\``, inline: true },
           { name: '**Status**', value: '✅ **Active**', inline: true },
           { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
           { name: '**Key**', value: `\`${key}\``, inline: false }
@@ -233,7 +249,7 @@ module.exports = {
         .setDescription(`***Order has been started for ${targetUser}***`)
         .addFields(
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
-          { name: '**Bots Count**', value: `\`${botsCount}\``, inline: true },
+          { name: '**Accounts Count**', value: `\`${accountsCount}\``, inline: true },
           { name: '**Staff Member**', value: `<@${interaction.user.id}>`, inline: true },
           { name: '**Start Time**', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
           { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },

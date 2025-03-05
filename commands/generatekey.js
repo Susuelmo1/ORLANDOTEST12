@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, WebhookClient } = require('discord.js');
 const crypto = require('crypto');
 
 module.exports = {
@@ -237,7 +237,6 @@ module.exports = {
       // Log to a webhook
       try {
         const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
-        const { WebhookClient } = require('discord.js');
         const webhook = new WebhookClient({ url: webhookUrl });
 
         // Get order details for more comprehensive logging
@@ -271,7 +270,7 @@ module.exports = {
         const queueChannel = await client.channels.fetch('1346304963445260338').catch(console.error);
         if (queueChannel) {
           const queueEmbed = new EmbedBuilder()
-            .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **QUEUE UPDATE**')
+            .setTitle('**@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫**\n<:purplearrow:1337594384631332885> **QUEUE UPDATE**')
             .setDescription(`***A new key has been generated for ${user.tag}***`)
             .addFields(
               { name: '**Queue Position**', value: `#${queuePosition}`, inline: true },
@@ -295,3 +294,12 @@ module.exports = {
     }
   }
 };
+
+async function sendWebhook(url, data) {
+  try {
+    const webhook = new WebhookClient({ url });
+    await webhook.send(data);
+  } catch (error) {
+    console.error('Error sending to webhook:', error);
+  }
+}

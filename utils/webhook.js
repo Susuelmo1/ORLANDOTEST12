@@ -83,7 +83,7 @@ async function logToWebhook(options) {
   try {
     // Create a new embed with our consistent branding
     const embed = new EmbedBuilder()
-      .setTitle(options.title ? `@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **${options.title}**` : '@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **LOG EVENT**')
+      .setTitle(options.title ? `**@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫**\n<:purplearrow:1337594384631332885> **${options.title}**` : '**@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫**\n<:purplearrow:1337594384631332885> **LOG EVENT**')
       .setDescription(options.description ? `***${options.description}***` : '')
       .setColor(options.color || 0x9B59B6)
       .setTimestamp()
