@@ -9,30 +9,30 @@ const { WebhookClient, EmbedBuilder } = require('discord.js');
 async function sendWebhook(webhookUrl, data) {
   try {
     const webhook = new WebhookClient({ url: webhookUrl });
-    
+
     // If data contains embeds, enhance them with consistent branding if they don't already have it
     if (data.embeds && Array.isArray(data.embeds)) {
       data.embeds = data.embeds.map(embed => {
         // If it's already an EmbedBuilder instance, convert to raw data
         const rawEmbed = embed instanceof EmbedBuilder ? embed.toJSON() : embed;
-        
+
         // Set default color if not specified
         if (!rawEmbed.color) {
           rawEmbed.color = 0x9B59B6; // Purple color
         }
-        
+
         // Set default image if not specified
         if (!rawEmbed.image && !rawEmbed.thumbnail) {
           rawEmbed.image = { 
             url: 'https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png'
           };
         }
-        
+
         // Set default footer if not specified
         if (!rawEmbed.footer) {
           rawEmbed.footer = { text: 'ERLC Alting Support' };
         }
-        
+
         // Check if this is a product selection embed and add PayPal info
         if (rawEmbed.title && rawEmbed.title.includes('PRODUCT SELECTED')) {
           // Add PayPal emoji to price field if it exists
@@ -40,7 +40,7 @@ async function sendWebhook(webhookUrl, data) {
           if (priceField) {
             priceField.value = `<:PAYPAL:1337607920447131769> ${priceField.value}`;
           }
-          
+
           // Replace "Next Steps" field if it exists
           const nextStepsIndex = rawEmbed.fields?.findIndex(field => field.name === '**Next Steps**');
           if (nextStepsIndex !== -1 && nextStepsIndex !== undefined) {
@@ -50,11 +50,11 @@ async function sendWebhook(webhookUrl, data) {
             };
           }
         }
-        
+
         return rawEmbed;
       });
     }
-    
+
     await webhook.send(data);
   } catch (error) {
     console.error('Error sending webhook:', error);
@@ -96,7 +96,7 @@ async function logToWebhook(options) {
       // Set default banner if neither is provided
       embed.setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
     }
-    
+
     if (options.thumbnail) {
       embed.setThumbnail(options.thumbnail);
     }
@@ -105,7 +105,7 @@ async function logToWebhook(options) {
     if (options.includeQueue) {
       const queuePosition = options.queuePosition || 1;
       const waitTime = options.estimatedWaitTime || (queuePosition * 2);
-      
+
       embed.addFields({
         name: '**Queue Position**',
         value: `Your order is #${queuePosition} in queue. Estimated wait: ${waitTime} minutes.`,
@@ -125,7 +125,7 @@ async function logToWebhook(options) {
         }
         return field;
       });
-      
+
       embed.addFields(enhancedFields);
     }
 
@@ -143,10 +143,10 @@ async function logToWebhook(options) {
 const WEBHOOKS = {
   // Primary webhook for general notifications
   PRIMARY: 'https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML',
-  
+
   // Order completion webhook
   ORDER_COMPLETION: 'https://discord.com/api/webhooks/1346696889101320303/WKWqJQLiN3NVSN4DRaR56PyuUZrOIHtkAvWTazqiYxSCb1ume1R5cnfQEZYEsxNOzVQp',
-  
+
   // Queue updates channel webhook
   QUEUE_UPDATES: 'https://discord.com/api/webhooks/1346304963445260338/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML'
 };
@@ -175,7 +175,7 @@ async function logOrderCompletion(options) {
     image: 'https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png',
     ...options
   });
-  
+
   // Send to order completion webhook
   return logToWebhook({
     webhookUrl: WEBHOOKS.ORDER_COMPLETION,
@@ -193,16 +193,16 @@ async function updateQueueStatus(options) {
   // Calculate current queue position and wait time
   let queuePosition = 1;
   let waitTimeMinutes = 5;
-  
+
   if (global.activeOrders) {
     queuePosition = global.activeOrders.size + 1;
     waitTimeMinutes = queuePosition * 2; // Assume average 2 minutes per order
   }
-  
+
   // Override with provided values if any
   if (options.position) queuePosition = options.position;
   if (options.waitTime) waitTimeMinutes = options.waitTime;
-  
+
   // Send to queue updates webhook directly
   return logToWebhook({
     webhookUrl: WEBHOOKS.QUEUE_UPDATES,
@@ -214,6 +214,50 @@ async function updateQueueStatus(options) {
     estimatedWaitTime: waitTimeMinutes,
     ...options
   });
+}
+
+// Log a completed order
+async function logOrder(orderData) {
+  try {
+    const webhookUrl = process.env.ORDER_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346696889101320303/WKWqJQLiN3NVSN4DRaR56PyuUZrOIHtkAvWTazqiYxSCb1ume1R5cnfQEZYEsxNOzVQp';
+    const webhook = new WebhookClient({ url: webhookUrl });
+
+    // Create the embed from the provided data
+    const embed = new EmbedBuilder()
+      .setTitle(`@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **${orderData.title}**`)
+      .setDescription(orderData.description)
+      .setColor(orderData.color || 0x9B59B6) // Use provided color or default to purple
+      .setTimestamp();
+
+    // Add fields if provided
+    if (orderData.fields && Array.isArray(orderData.fields)) {
+      orderData.fields.forEach(field => {
+        embed.addFields({ 
+          name: field.name, 
+          value: field.value, 
+          inline: field.inline !== undefined ? field.inline : false 
+        });
+      });
+    }
+
+    // Add image if provided
+    if (orderData.image) {
+      embed.setImage(orderData.image);
+    } else {
+      embed.setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
+    }
+
+    // Send the webhook
+    await webhook.send({ 
+      content: orderData.content || '',
+      embeds: [embed] 
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error sending order webhook:', error);
+    return false;
+  }
 }
 
 module.exports = {
