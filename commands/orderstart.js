@@ -400,7 +400,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Error activating service:', error);
-      await interaction.editReply('❌ There was an error activating the service! Please try again or contact an administrator.');inistrator.');
+      await interaction.editReply('❌ There was an error activating the service! Please try again or contact an administrator.');
     }
   }
 };
