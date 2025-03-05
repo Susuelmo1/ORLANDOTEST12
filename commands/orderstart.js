@@ -136,20 +136,72 @@ module.exports = {
       
       await interaction.channel.send({ embeds: [autoJoinEmbed] });
 
-      // Simulate bots joining (in a real implementation, this would connect to Roblox)
-      setTimeout(async () => {
-        const joinCompleteEmbed = new EmbedBuilder()
-          .setTitle('<:purplearrow:1337594384631332885> **BOTS CONNECTED**')
-          .setDescription(`***Successfully connected ${botsCount} bots to ERLC server***`)
-          .addFields(
-            { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
-            { name: '**Status**', value: '✅ **Connected**', inline: true }
-          )
-          .setColor(0x9B59B6)
-          .setTimestamp();
-        
-        await interaction.channel.send({ embeds: [joinCompleteEmbed] });
-      }, 3000); // Simulate a 3-second connection process
+      // Simulate bots joining with improved verification
+      const botJoinPromise = new Promise(async (resolve) => {
+        // Step 1: Connecting message
+        setTimeout(async () => {
+          const connectingEmbed = new EmbedBuilder()
+            .setTitle('<:purplearrow:1337594384631332885> **CONNECTING TO ROBLOX**')
+            .setDescription(`***Initializing connection to Roblox servers...***`)
+            .addFields(
+              { name: '**Status**', value: '🔄 **Authenticating...**', inline: true }
+            )
+            .setColor(0x9B59B6)
+            .setTimestamp();
+          
+          await interaction.channel.send({ embeds: [connectingEmbed] });
+
+          // Step 2: Loading server message
+          setTimeout(async () => {
+            const loadingEmbed = new EmbedBuilder()
+              .setTitle('<:purplearrow:1337594384631332885> **LOADING ERLC SERVER**')
+              .setDescription(`***Connecting bots to ERLC server with code: ${serverCode}...***`)
+              .addFields(
+                { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
+                { name: '**Status**', value: '🔄 **Loading game assets...**', inline: true }
+              )
+              .setColor(0x9B59B6)
+              .setTimestamp();
+            
+            await interaction.channel.send({ embeds: [loadingEmbed] });
+
+            // Step 3: Final connection message
+            setTimeout(async () => {
+              const joinCompleteEmbed = new EmbedBuilder()
+                .setTitle('<:purplearrow:1337594384631332885> **BOTS CONNECTED**')
+                .setDescription(`***Successfully connected ${botsCount} bots to ERLC server***`)
+                .addFields(
+                  { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
+                  { name: '**Status**', value: '✅ **Connected**', inline: true },
+                  { name: '**Verification Link**', value: `[Click to verify bots in-game](https://www.roblox.com/games/2534724415/Emergency-Response-Liberty-County?privateServerLinkCode=${serverCode})`, inline: false },
+                  { name: '**Bot IDs**', value: generateBotIDs(botsCount), inline: false }
+                )
+                .setColor(0x9B59B6)
+                .setTimestamp();
+              
+              await interaction.channel.send({ embeds: [joinCompleteEmbed] });
+              resolve();
+            }, 2000);
+          }, 2000);
+        }, 1000);
+      });
+
+      // Wait for the join process to complete
+      await botJoinPromise;
+
+      // Helper function to generate fake bot IDs for visual verification
+      function generateBotIDs(count) {
+        let botIDsText = '';
+        for (let i = 1; i <= count; i++) {
+          const randomID = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+          botIDsText += `Bot_${randomID}\n`;
+          if (i === 5 && count > 10) {
+            botIDsText += `*and ${count - 5} more...*\n`;
+            break;
+          }
+        }
+        return `\`\`\`\n${botIDsText}\`\`\``;
+      }
 
       // Create success embed for confirmation
       const successEmbed = new EmbedBuilder()
