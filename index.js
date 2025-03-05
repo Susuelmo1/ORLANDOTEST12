@@ -306,7 +306,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
     if (ticketType === 'support') {
       // Simple welcome message for general support
       welcomeEmbed = new EmbedBuilder()
-        .setTitle('<:purplearrow:1337594384631332885> **SUPPORT TICKET**')
+        .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **SUPPORT TICKET**')
         .setDescription(`***Hello ${user}, a staff member will be with you shortly.***\n\n**Queue Position: #${queuePosition}**`)
         .setColor(0x9B59B6)
         .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
@@ -314,7 +314,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
     } else {
       // Enhanced welcome message for order and VIP tickets
       welcomeEmbed = new EmbedBuilder()
-        .setTitle(`<:purplearrow:1337594384631332885> **${ticketType.toUpperCase()} TICKET**`)
+        .setTitle(`@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **${ticketType.toUpperCase()} TICKET**`)
         .setDescription(`***Hello ${user}, welcome to your ${ticketType === 'order' ? 'Order' : 'VIP'} Ticket!***\n\n**Queue Position: #${queuePosition}**`)
         .addFields(
           {
@@ -371,7 +371,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
 
       // Create VIP packages embed
       const vipEmbed = new EmbedBuilder()
-        .setTitle('<:purplearrow:1337594384631332885> **VIP PACKAGES**')
+        .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **VIP PACKAGES**')
         .setDescription('***Please select a VIP package or use one of the links below:***')
         .addFields(
           { 
@@ -913,7 +913,7 @@ client.on('interactionCreate', async interaction => {
 
           // Send confirmation message with appropriate product links
           const productEmbed = new EmbedBuilder()
-            .setTitle('<:purplearrow:1337594384631332885> **PRODUCT SELECTED**')
+            .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **PRODUCT SELECTED**')
             .setDescription(`***You have selected: ${productInfo}***`)
             .setColor(0x9B59B6)
             .setTimestamp()
@@ -1010,7 +1010,7 @@ client.on('interactionCreate', async interaction => {
 
           // Send claim confirmation
           const claimEmbed = new EmbedBuilder()
-            .setTitle('<:purplearrow:1337594384631332885> **TICKET CLAIMED**')
+            .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **TICKET CLAIMED**')
             .setDescription(`This ticket has been claimed by ${interaction.user.tag}`)
             .setColor(0x9B59B6)
             .setTimestamp();
