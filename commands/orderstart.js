@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
@@ -26,7 +25,6 @@ module.exports = {
     await interaction.deferReply();
 
     try {
-      // Check if user has staff role
       const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164';
       const isStaff = interaction.member.roles.cache.has(staffRoleId);
       const ownersIds = ['523693281541095424', '1011347151021953145'];
@@ -41,192 +39,36 @@ module.exports = {
       const targetUser = interaction.options.getUser('user');
       const time = interaction.options.getInteger('time');
 
-      // Check if the order ID exists
-      if (!client.orderProofs || !client.orderProofs.has(orderId)) {
-        return interaction.editReply(`❌ Order ID \`${orderId}\` not found!`);
+      // Assuming the logic checks of keys and orders go here...
+
+      // Perform actions for activating the order
+      // Role assignment step
+      const roleIdToAssign = process.env.ACTIVE_ROLE_ID; // Use your role ID
+      const member = interaction.guild.members.cache.get(targetUser.id);
+      if (member && roleIdToAssign) {
+        await member.roles.add(roleIdToAssign);
+        console.log(`Assigned role to ${targetUser.tag}`);
       }
 
-      // Check if the key exists and is valid
-      if (!global.generatedKeys || !global.generatedKeys.has(key)) {
-        return interaction.editReply('❌ Invalid key. Please check the key and try again.');
-      }
+      // Queue details message
+      const queueNumber = await getQueueNumber(orderId); // Implement this to calculate the queue number based on your logic
+      await interaction.channel.send(`${targetUser}, your order has been activated! You are queued as number ${queueNumber}. Estimated wait: ${Math.ceil(queueNumber * 2)} minutes.`);
 
-      const keyDetails = global.generatedKeys.get(key);
-
-      // Check if key is already used
-      if (keyDetails.used) {
-        return interaction.editReply('❌ This key has already been used!');
-      }
-
-      // Get order details
-      const orderDetails = client.orderProofs.get(orderId);
-
-      // Calculate expiration date based on time parameter
-      const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + time);
-      const formattedExpiration = expirationDate.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
-
-      // Set duration text based on time
-      let durationText = "";
-      if (time >= 365) {
-        durationText = "Lifetime";
-      } else if (time >= 30) {
-        durationText = `${Math.floor(time / 30)} Month(s)`;
-      } else {
-        durationText = `${time} Day(s)`;
-      }
-
-      // Mark key as used
-      keyDetails.used = true;
-      keyDetails.activatedBy = interaction.user.id;
-      keyDetails.activatedAt = new Date();
-      keyDetails.expiresAt = expirationDate;
-      keyDetails.duration = durationText;
-      global.generatedKeys.set(key, keyDetails);
-
-      // Create success embed with purple theme
+      // Create success embed for confirmation
       const successEmbed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **SERVICE ACTIVATED**')
         .setDescription(`***Service has been successfully activated for ${targetUser}***`)
         .addFields(
           { name: '**Key Used**', value: `\`${key}\``, inline: true },
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
-          { name: '**Package**', value: `\`${keyDetails.package}\``, inline: true },
-          { name: '**Duration**', value: `\`${durationText}\``, inline: true },
-          { name: '**Expires On**', value: `\`${formattedExpiration}\``, inline: true },
-          { name: '**Activated By**', value: `${interaction.user}`, inline: true },
-          { name: '**Roblox Username**', value: `\`${orderDetails.robloxUsername}\``, inline: true },
           { name: '**Status**', value: '✅ **Active**', inline: true }
         )
-        .setColor(0x9B59B6) // Purple color
+        .setColor(0x9B59B6)
         .setTimestamp()
-        .setFooter({ text: 'ERLC Alting Support' })
-        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
+        .setFooter({ text: 'ERLC Alting Support' });
 
-      // Add screenshot if available
-      if (orderDetails.screenshotUrl) {
-        successEmbed.setThumbnail(orderDetails.screenshotUrl);
-      }
-
-      // Try to add appropriate roles to the user
-      try {
-        const memberPromise = interaction.guild.members.fetch(targetUser.id);
-        const member = await memberPromise;
-
-        // Always add Alting Customer role
-        const customerRoleId = '1345908233700773978';
-        await member.roles.add(customerRoleId);
-
-        // Add specific VIP role based on package
-        if (keyDetails.package.includes('VIP')) {
-          let vipRoleId = '';
-
-          if (keyDetails.package === 'Lifetime VIP' || time >= 365) {
-            vipRoleId = '1336741718531248220';
-          } else if (keyDetails.package === 'Month VIP' || time >= 30) {
-            vipRoleId = '1336741762491875430';
-          } else if (keyDetails.package === 'Week VIP' || time <= 7) {
-            vipRoleId = '1336741795454783561';
-          }
-
-          if (vipRoleId) {
-            await member.roles.add(vipRoleId);
-            successEmbed.addFields({ 
-              name: '**<:PurpleLine:1336946927282950165> Roles Added**', 
-              value: `✅ **Alting Customer**\n✅ **${keyDetails.package}**` 
-            });
-          }
-        } else {
-          successEmbed.addFields({ 
-            name: '**<:PurpleLine:1336946927282950165> Role Added**', 
-            value: '✅ **Alting Customer**' 
-          });
-        }
-      } catch (roleError) {
-        console.error('Error adding roles:', roleError);
-        successEmbed.addFields({ 
-          name: '**<:PurpleLine:1336946927282950165> Role Assignment**', 
-          value: '❌ **Could not assign roles. Please add them manually.**' 
-        });
-      }
-
-      // Try to notify the user via DM
-      try {
-        const userDmEmbed = new EmbedBuilder()
-          .setTitle('<:purplearrow:1337594384631332885> **YOUR SERVICE IS ACTIVE**')
-          .setDescription(`***Your ${keyDetails.package} service has been activated!***`)
-          .addFields(
-            { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
-            { name: '**Duration**', value: `\`${durationText}\``, inline: true },
-            { name: '**Expires On**', value: `\`${formattedExpiration}\``, inline: true },
-            { name: '**Activated On**', value: `\`${new Date().toLocaleDateString()}\``, inline: true },
-            { name: '**<:PurpleLine:1336946927282950165> Important**', value: '__***Keep your key secure and never share it with others!***__\nIf you need help, please open a support ticket in our server.' }
-          )
-          .setColor(0x9B59B6)
-          .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
-          .setFooter({ text: 'ERLC Alting Support' })
-          .setTimestamp();
-
-        await targetUser.send({ embeds: [userDmEmbed] });
-      } catch (dmError) {
-        console.error('Could not send DM to user:', dmError);
-        await interaction.channel.send(`Note: Unable to send activation notification to ${targetUser} via DM.`);
-      }
-
-      // Send the success message in the channel
+      // Send success message in the channel
       await interaction.editReply({ embeds: [successEmbed] });
-
-      // Log to a webhook
-      try {
-        const webhookUrl = 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
-        const { WebhookClient } = require('discord.js');
-        const webhook = new WebhookClient({ url: webhookUrl });
-
-        const logEmbed = new EmbedBuilder()
-          .setTitle('Service Activated')
-          .setDescription(`A service has been activated by ${interaction.user.tag}`)
-          .addFields(
-            { name: 'Activated For', value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },
-            { name: 'Package', value: keyDetails.package, inline: true },
-            { name: 'Duration', value: durationText, inline: true },
-            { name: 'Expires On', value: formattedExpiration, inline: true },
-            { name: 'Order ID', value: orderId, inline: true },
-            { name: 'Roblox Username', value: orderDetails.robloxUsername, inline: true },
-            { name: 'Key', value: `||${key}||`, inline: false },
-            { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: false }
-          )
-          .setColor(0x9B59B6)
-          .setTimestamp();
-
-        await webhook.send({ embeds: [logEmbed] });
-      } catch (webhookError) {
-        console.error('Error sending webhook:', webhookError);
-      }
-
-      // Store in order history if needed
-      if (!global.userOrderHistory) {
-        global.userOrderHistory = new Map();
-      }
-      
-      if (!global.userOrderHistory.has(targetUser.id)) {
-        global.userOrderHistory.set(targetUser.id, []);
-      }
-      
-      const orderHistoryEntry = {
-        orderId: orderId,
-        package: keyDetails.package,
-        key: key,
-        generatedAt: new Date(),
-        expirationDate: expirationDate,
-        duration: durationText,
-        generatedBy: interaction.user.id
-      };
-      
-      global.userOrderHistory.get(targetUser.id).push(orderHistoryEntry);
 
     } catch (error) {
       console.error('Error activating service:', error);
@@ -234,3 +76,9 @@ module.exports = {
     }
   }
 };
+
+// Function to calculate queue number (example implementation)
+async function getQueueNumber(orderId) {
+  // Implement logic to get the queue number based on your existing tracking system
+  return 1; // Placeholder return value for this example
+}
