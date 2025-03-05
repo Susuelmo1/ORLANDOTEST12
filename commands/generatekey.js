@@ -195,8 +195,8 @@ module.exports = {
           { name: '**Duration**', value: `\`${expirationDays} days\``, inline: true },
           { name: '**Expires**', value: `\`${formattedExpiration}\``, inline: true },
           { name: '**Key**', value: `||**\`${key}\`**|| (ID: \`${orderId}\`)`, inline: false },
-          { name: '**Queue Position**', value: `Your ticket is #${queuePosition} in queue. Estimated wait: ${estimatedWaitMinutes} minutes.`, inline: false },
-          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `Use \`/orderstart\` to activate this key for the user. Include the key in the command.` }
+          { name: '**Estimated Time**', value: `Based on current queue, your service will be ready in approximately ${estimatedWaitMinutes} minutes.`, inline: false },
+          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `Use \`/orderstart\` to activate this key for the user.` }
         )
         .setColor(0x9B59B6)
         .setTimestamp()

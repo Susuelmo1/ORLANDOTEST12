@@ -1,5 +1,4 @@
-
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { sendWebhook } = require('../utils/webhook');
 
 module.exports = {
@@ -61,7 +60,7 @@ module.exports = {
       }
 
       const orderData = global.activeOrders.get(orderId);
-      
+
       // Get user information
       const user1 = interaction.options.getUser('user1');
       const duration1 = interaction.options.getInteger('duration1');
@@ -69,23 +68,23 @@ module.exports = {
       const duration2 = interaction.options.getInteger('duration2');
       const user3 = interaction.options.getUser('user3');
       const duration3 = interaction.options.getInteger('duration3');
-      
+
       // Calculate order total duration
       const startTime = new Date(orderData.startTime);
       const endTime = new Date();
       const totalDurationMs = endTime - startTime;
       const totalHours = Math.floor(totalDurationMs / (1000 * 60 * 60));
       const totalMinutes = Math.floor((totalDurationMs % (1000 * 60 * 60)) / (1000 * 60));
-      
+
       // Prepare user duration fields
       const userFields = [];
-      
+
       userFields.push({
         name: `**${user1.username}'s Duration**`,
         value: `\`${Math.floor(duration1 / 60)}h ${duration1 % 60}m\``,
         inline: true
       });
-      
+
       if (user2 && duration2) {
         userFields.push({
           name: `**${user2.username}'s Duration**`,
@@ -93,7 +92,7 @@ module.exports = {
           inline: true
         });
       }
-      
+
       if (user3 && duration3) {
         userFields.push({
           name: `**${user3.username}'s Duration**`,
@@ -101,12 +100,12 @@ module.exports = {
           inline: true
         });
       }
-      
+
       // Update order in user history
       if (global.userOrderHistory && global.userOrderHistory.has(orderData.userId)) {
         const userHistory = global.userOrderHistory.get(orderData.userId);
         const orderIndex = userHistory.findIndex(order => order.orderId === orderId && order.active);
-        
+
         if (orderIndex !== -1) {
           userHistory[orderIndex].active = false;
           userHistory[orderIndex].endTime = endTime;
@@ -121,14 +120,14 @@ module.exports = {
             user3 ? { userId: user3.id, duration: duration3 } : null
           ].filter(Boolean);
           userHistory[orderIndex].notes = notes;
-          
+
           global.userOrderHistory.set(orderData.userId, userHistory);
         }
       }
-      
+
       // Remove from active orders
       global.activeOrders.delete(orderId);
-      
+
       // Create completion embed
       const completionEmbed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **ORDER COMPLETED**')
@@ -175,12 +174,12 @@ module.exports = {
         .setColor(0x9B59B6)
         .setTimestamp()
         .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
-      
+
       // Add key information to webhook if available
       if (orderData.key) {
         webhookEmbed.addFields({ name: '**Key**', value: `\`${orderData.key}\``, inline: true });
       }
-      
+
       // Send to webhook
       sendWebhook('https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML', { embeds: [webhookEmbed] });
 

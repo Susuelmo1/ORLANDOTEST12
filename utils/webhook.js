@@ -33,6 +33,24 @@ async function sendWebhook(webhookUrl, data) {
           rawEmbed.footer = { text: 'ERLC Alting Support' };
         }
         
+        // Check if this is a product selection embed and add PayPal info
+        if (rawEmbed.title && rawEmbed.title.includes('PRODUCT SELECTED')) {
+          // Add PayPal emoji to price field if it exists
+          const priceField = rawEmbed.fields?.find(field => field.name === '**Price**');
+          if (priceField) {
+            priceField.value = `<:PAYPAL:1337607920447131769> ${priceField.value}`;
+          }
+          
+          // Replace "Next Steps" field if it exists
+          const nextStepsIndex = rawEmbed.fields?.findIndex(field => field.name === '**Next Steps**');
+          if (nextStepsIndex !== -1 && nextStepsIndex !== undefined) {
+            rawEmbed.fields[nextStepsIndex] = {
+              name: '**<:PurpleLine:1336946927282950165> Payment**',
+              value: '**Please complete your purchase and use `/orderproof` to submit your order details.**'
+            };
+          }
+        }
+        
         return rawEmbed;
       });
     }
@@ -54,6 +72,9 @@ async function sendWebhook(webhookUrl, data) {
  * @param {string} options.thumbnail - URL for thumbnail image
  * @param {string} options.image - URL for main image
  * @param {Object} options.footer - Footer object with text property
+ * @param {boolean} options.includeQueue - Whether to include queue information (default: false)
+ * @param {number} options.queuePosition - Position in queue (if includeQueue is true)
+ * @param {number} options.estimatedWaitTime - Estimated wait time in minutes (if includeQueue is true)
  * @returns {Promise<boolean>}
  */
 async function logToWebhook(options) {
@@ -78,6 +99,18 @@ async function logToWebhook(options) {
     
     if (options.thumbnail) {
       embed.setThumbnail(options.thumbnail);
+    }
+
+    // Add queue information if requested
+    if (options.includeQueue) {
+      const queuePosition = options.queuePosition || 1;
+      const waitTime = options.estimatedWaitTime || (queuePosition * 2);
+      
+      embed.addFields({
+        name: '**Queue Position**',
+        value: `Your order is #${queuePosition} in queue. Estimated wait: ${waitTime} minutes.`,
+        inline: false
+      });
     }
 
     // Add fields
@@ -117,8 +150,35 @@ async function logOrder(options) {
   });
 }
 
+/**
+ * Send queue updates to the order webhook
+ * Tracks position and estimated wait time
+ */
+async function updateQueueStatus(options) {
+  // Calculate current queue position and wait time
+  let queuePosition = 1;
+  let waitTimeMinutes = 5;
+  
+  if (global.activeOrders) {
+    queuePosition = global.activeOrders.size + 1;
+    waitTimeMinutes = queuePosition * 2; // Assume average 2 minutes per order
+  }
+  
+  // Override with provided values if any
+  if (options.position) queuePosition = options.position;
+  if (options.waitTime) waitTimeMinutes = options.waitTime;
+  
+  return logOrder({
+    includeQueue: true,
+    queuePosition: queuePosition,
+    estimatedWaitTime: waitTimeMinutes,
+    ...options
+  });
+}
+
 module.exports = {
   sendWebhook,
   logToWebhook,
-  logOrder
+  logOrder,
+  updateQueueStatus
 };

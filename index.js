@@ -922,7 +922,7 @@ client.on('interactionCreate', async interaction => {
           // Add fields based on product type
           productEmbed.addFields({ 
             name: '**Price**', 
-            value: productPrice, 
+            value: `<:PAYPAL:1337607920447131769> ${productPrice}`, 
             inline: true 
           });
 
@@ -948,10 +948,10 @@ client.on('interactionCreate', async interaction => {
             }
           }
 
-          // Add next steps
+          // Add payment instructions instead of "next steps"
           productEmbed.addFields({ 
-            name: '**Next Steps**', 
-            value: 'Wait for staff to verify your order proof and process your payment.' 
+            name: '**<:PurpleLine:1336946927282950165> Payment**', 
+            value: '**Please complete your purchase and use `/orderproof` to submit your order details.**'
           });
 
           await channel.send({ embeds: [productEmbed] });

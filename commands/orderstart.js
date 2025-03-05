@@ -20,7 +20,7 @@ module.exports = {
     .addStringOption(option =>
       option.setName('server_code')
         .setDescription('ERLC private server code')
-        .setRequired(false)),
+        .setRequired(true)),
 
   async execute(interaction, client) {
     await interaction.deferReply();
@@ -58,6 +58,11 @@ module.exports = {
           return interaction.editReply(`❌ This key doesn't belong to ${targetUser}!`);
         }
         
+        // Check if key was already used
+        if (keyInfo.used) {
+          return interaction.editReply(`❌ This key has already been used! If this is a mistake, please contact an administrator.`);
+        }
+        
         // Mark key as used
         keyInfo.used = true;
         global.generatedKeys.set(key, keyInfo);
@@ -78,11 +83,10 @@ module.exports = {
           roleAssigned = true;
         } catch (roleError) {
           console.error(`Error assigning role to ${targetUser.tag}:`, roleError);
-          // Don't send separate message, we'll include this in the embed
         }
       }
 
-      // Store order start time
+      // Store order start time with user join timestamp to prevent rejoin abuse
       if (!global.activeOrders) {
         global.activeOrders = new Map();
       }
@@ -94,7 +98,9 @@ module.exports = {
         botsCount: botsCount,
         staffId: interaction.user.id,
         key: key,
-        serverCode: serverCode
+        serverCode: serverCode,
+        joinTimestamp: member.joinedTimestamp, // Track join timestamp to prevent abuse
+        userTag: targetUser.tag // Store user tag for reference
       };
 
       global.activeOrders.set(orderId, orderData);
@@ -112,9 +118,38 @@ module.exports = {
         staffId: interaction.user.id,
         key: key,
         serverCode: serverCode,
-        active: true
+        active: true,
+        joinTimestamp: member.joinedTimestamp
       });
       global.userOrderHistory.set(targetUser.id, userHistory);
+
+      // Initiate auto-joining for ERLC bots (this is a simulation since we can't actually control Roblox)
+      const autoJoinEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> **AUTO-JOIN INITIATED**')
+        .setDescription(`***${botsCount} bots are being dispatched to ERLC server...***`)
+        .addFields(
+          { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
+          { name: '**Status**', value: '🔄 **Connecting...**', inline: true }
+        )
+        .setColor(0x9B59B6)
+        .setTimestamp();
+      
+      await interaction.channel.send({ embeds: [autoJoinEmbed] });
+
+      // Simulate bots joining (in a real implementation, this would connect to Roblox)
+      setTimeout(async () => {
+        const joinCompleteEmbed = new EmbedBuilder()
+          .setTitle('<:purplearrow:1337594384631332885> **BOTS CONNECTED**')
+          .setDescription(`***Successfully connected ${botsCount} bots to ERLC server***`)
+          .addFields(
+            { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
+            { name: '**Status**', value: '✅ **Connected**', inline: true }
+          )
+          .setColor(0x9B59B6)
+          .setTimestamp();
+        
+        await interaction.channel.send({ embeds: [joinCompleteEmbed] });
+      }, 3000); // Simulate a 3-second connection process
 
       // Create success embed for confirmation
       const successEmbed = new EmbedBuilder()
@@ -124,16 +159,12 @@ module.exports = {
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
           { name: '**Bots Count**', value: `\`${botsCount}\``, inline: true },
           { name: '**Status**', value: '✅ **Active**', inline: true },
+          { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
           { name: '**Key**', value: `\`${key}\``, inline: false }
         )
         .setColor(0x9B59B6)
         .setTimestamp()
         .setFooter({ text: 'ERLC Alting Support' });
-
-      // Add server code if provided
-      if (serverCode) {
-        successEmbed.addFields({ name: '**Server Code**', value: `\`${serverCode}\``, inline: true });
-      }
       
       // Add role assignment status
       if (!roleAssigned) {
@@ -153,16 +184,12 @@ module.exports = {
           { name: '**Bots Count**', value: `\`${botsCount}\``, inline: true },
           { name: '**Staff Member**', value: `<@${interaction.user.id}>`, inline: true },
           { name: '**Start Time**', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
+          { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
           { name: '**Key**', value: `\`${key}\``, inline: false }
         )
         .setColor(0x9B59B6)
         .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
         .setTimestamp();
-
-      // Add server code to webhook if provided
-      if (serverCode) {
-        webhookEmbed.addFields({ name: '**Server Code**', value: `\`${serverCode}\``, inline: true });
-      }
 
       // Send to webhook
       sendWebhook('https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML', { embeds: [webhookEmbed] });
