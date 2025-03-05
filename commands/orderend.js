@@ -180,8 +180,22 @@ module.exports = {
         webhookEmbed.addFields({ name: '**Key**', value: `\`${orderData.key}\``, inline: true });
       }
 
-      // Send to webhook
-      sendWebhook('https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML', { embeds: [webhookEmbed] });
+      // Send to multiple webhooks using the new function
+      const { logOrderCompletion } = require('../utils/webhook');
+      await logOrderCompletion({
+        title: 'ORDER COMPLETED',
+        description: `Order ID: \`${orderId}\` has been completed`,
+        fields: [
+          { name: 'Customer', value: `<@${orderData.userId}>`, inline: true },
+          { name: 'Staff Member', value: `${interaction.user}`, inline: true },
+          { name: 'Total Duration', value: `\`${totalHours}h ${totalMinutes}m\``, inline: true },
+          { name: 'Bots Count', value: `\`${orderData.botsCount || 'N/A'}\``, inline: true },
+          participantsField,
+          { name: 'End Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
+          { name: 'Notes', value: `\`${notes}\``, inline: false },
+          orderData.key ? { name: 'Key', value: `\`${orderData.key}\``, inline: true } : null
+        ].filter(field => field !== null) // Remove null fields
+      });
 
       // Send success message
       await interaction.editReply({ embeds: [completionEmbed] });

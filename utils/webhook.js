@@ -138,12 +138,26 @@ async function logToWebhook(options) {
 }
 
 /**
+ * Webhook URLs for different types of notifications
+ */
+const WEBHOOKS = {
+  // Primary webhook for general notifications
+  PRIMARY: 'https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML',
+  
+  // Order completion webhook
+  ORDER_COMPLETION: 'https://discord.com/api/webhooks/1346696889101320303/WKWqJQLiN3NVSN4DRaR56PyuUZrOIHtkAvWTazqiYxSCb1ume1R5cnfQEZYEsxNOzVQp',
+  
+  // Queue updates channel webhook
+  QUEUE_UPDATES: 'https://discord.com/api/webhooks/1346304963445260338/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML'
+};
+
+/**
  * Send order logs to the order webhook
  * Enhanced with consistent styling and branding
  */
 async function logOrder(options) {
   return logToWebhook({
-    webhookUrl: 'https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML',
+    webhookUrl: WEBHOOKS.PRIMARY,
     color: 0x9B59B6, // Purple color
     image: 'https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png',
     ...options
@@ -151,7 +165,28 @@ async function logOrder(options) {
 }
 
 /**
- * Send queue updates to the order webhook
+ * Send order completion logs to the dedicated webhook
+ */
+async function logOrderCompletion(options) {
+  // Send to primary webhook
+  await logToWebhook({
+    webhookUrl: WEBHOOKS.PRIMARY,
+    color: 0x9B59B6,
+    image: 'https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png',
+    ...options
+  });
+  
+  // Send to order completion webhook
+  return logToWebhook({
+    webhookUrl: WEBHOOKS.ORDER_COMPLETION,
+    color: 0x9B59B6,
+    image: 'https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png',
+    ...options
+  });
+}
+
+/**
+ * Send queue updates to the queue channel webhook
  * Tracks position and estimated wait time
  */
 async function updateQueueStatus(options) {
@@ -168,7 +203,12 @@ async function updateQueueStatus(options) {
   if (options.position) queuePosition = options.position;
   if (options.waitTime) waitTimeMinutes = options.waitTime;
   
-  return logOrder({
+  // Send to queue updates webhook directly
+  return logToWebhook({
+    webhookUrl: WEBHOOKS.QUEUE_UPDATES,
+    title: '**QUEUE UPDATE**',
+    description: options.description || 'Queue status has been updated',
+    color: 0x9B59B6,
     includeQueue: true,
     queuePosition: queuePosition,
     estimatedWaitTime: waitTimeMinutes,
@@ -180,5 +220,7 @@ module.exports = {
   sendWebhook,
   logToWebhook,
   logOrder,
-  updateQueueStatus
+  logOrderCompletion,
+  updateQueueStatus,
+  WEBHOOKS
 };

@@ -249,7 +249,7 @@ module.exports = {
         .setDescription(`***Order has been started for ${targetUser}***`)
         .addFields(
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
-          { name: '**Accounts Count**', value: `\`${accountsCount}\``, inline: true },
+          { name: '**Roblox Accounts**', value: `\`${accountsCount}\``, inline: true },
           { name: '**Staff Member**', value: `<@${interaction.user.id}>`, inline: true },
           { name: '**Start Time**', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
           { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
@@ -260,14 +260,147 @@ module.exports = {
         .setTimestamp();
 
       // Send to webhook
-      sendWebhook('https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML', { embeds: [webhookEmbed] });
+      const { logOrder } = require('../utils/webhook');
+      await logOrder({
+        title: 'NEW ORDER STARTED',
+        description: `Order has been started for ${targetUser}`,
+        fields: [
+          { name: 'Order ID', value: `\`${orderId}\``, inline: true },
+          { name: 'Roblox Accounts', value: `\`${accountsCount}\``, inline: true },
+          { name: 'Staff Member', value: `<@${interaction.user.id}>`, inline: true },
+          { name: 'Start Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
+          { name: 'Server Code', value: `\`${serverCode}\``, inline: true },
+          { name: 'Key', value: `\`${key}\``, inline: false }
+        ]
+      });
+
+      // Send a status update about connecting bots
+      const statusEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> **AUTO-JOIN INITIATED**')
+        .setDescription(`${accountsCount} Roblox accounts are being dispatched to ERLC server...`)
+        .addFields(
+          { name: '**Server Code**', value: `\`${serverCode}\``, inline: false },
+          { name: '**Status**', value: '🔄 Connecting...', inline: false }
+        )
+        .setColor(0x9B59B6)
+        .setTimestamp();
+      
+      const statusMessage = await interaction.channel.send({ embeds: [statusEmbed] });
+
+      // Attempt to login to Roblox with the specified account(s)
+      try {
+        const puppeteer = require('puppeteer');
+        
+        // Launch browser in headless mode
+        const browser = await puppeteer.launch({
+          args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        
+        // Default credentials
+        const robloxCredentials = {
+          username: 'susuelmo1',
+          password: 'Dekadeka12!'
+        };
+        
+        // Create a new page
+        const page = await browser.newPage();
+        
+        // Navigate to Roblox login page
+        await page.goto('https://www.roblox.com/login', { waitUntil: 'networkidle2' });
+        
+        // Fill in the login form
+        await page.type('#login-username', robloxCredentials.username);
+        await page.type('#login-password', robloxCredentials.password);
+        
+        // Click the login button
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: 'networkidle2' }),
+          page.click('#login-button')
+        ]).catch(e => {
+          console.log('Login navigation error:', e);
+        });
+        
+        // Check if login was successful
+        const isLoggedIn = await page.evaluate(() => {
+          return !document.querySelector('#login-button');
+        });
+        
+        if (isLoggedIn) {
+          // Update status as connected
+          const connectedEmbed = new EmbedBuilder()
+            .setTitle('<:purplearrow:1337594384631332885> **ROBLOX ACCOUNTS CONNECTED**')
+            .setDescription(`Successfully connected ${accountsCount} Roblox accounts to ERLC server`)
+            .addFields(
+              { name: '**Server Code**', value: `\`${serverCode}\``, inline: false },
+              { name: '**Status**', value: '✅ Connected', inline: false }
+            )
+            .setColor(0x9B59B6)
+            .setTimestamp();
+          
+          await statusMessage.edit({ embeds: [connectedEmbed] });
+          
+          // Log the successful connection
+          await logOrder({
+            title: 'ROBLOX ACCOUNTS CONNECTED',
+            description: `Successfully connected ${accountsCount} accounts to server code: ${serverCode}`,
+            fields: [
+              { name: 'Order ID', value: `\`${orderId}\``, inline: true },
+              { name: 'Status', value: 'Connected', inline: true }
+            ]
+          });
+        } else {
+          // Update status as failed
+          const failedEmbed = new EmbedBuilder()
+            .setTitle('<:purplearrow:1337594384631332885> **CONNECTION FAILED**')
+            .setDescription(`Failed to connect Roblox accounts to ERLC server`)
+            .addFields(
+              { name: '**Server Code**', value: `\`${serverCode}\``, inline: false },
+              { name: '**Status**', value: '❌ Connection Failed', inline: false },
+              { name: '**Next Steps**', value: 'Staff will handle this manually. Please wait.', inline: false }
+            )
+            .setColor(0xED4245) // Red color for failure
+            .setTimestamp();
+          
+          await statusMessage.edit({ embeds: [failedEmbed] });
+          
+          // Log the failed connection
+          await logOrder({
+            title: 'CONNECTION FAILED',
+            description: `Failed to connect accounts to server code: ${serverCode}`,
+            fields: [
+              { name: 'Order ID', value: `\`${orderId}\``, inline: true },
+              { name: 'Status', value: 'Failed', inline: true }
+            ],
+            color: 0xED4245 // Red color for failure
+          });
+        }
+        
+        // Close the browser
+        await browser.close();
+      } catch (browserError) {
+        console.error('Error with browser automation:', browserError);
+        
+        // Update status as failed
+        const errorEmbed = new EmbedBuilder()
+          .setTitle('<:purplearrow:1337594384631332885> **CONNECTION ERROR**')
+          .setDescription(`Error connecting Roblox accounts to ERLC server`)
+          .addFields(
+            { name: '**Server Code**', value: `\`${serverCode}\``, inline: false },
+            { name: '**Status**', value: '❌ Connection Error', inline: false },
+            { name: '**Next Steps**', value: 'Staff will handle this manually. Please wait.', inline: false }
+          )
+          .setColor(0xED4245) // Red color for error
+          .setTimestamp();
+        
+        await statusMessage.edit({ embeds: [errorEmbed] });
+      }
 
       // Send success message in the channel
       await interaction.editReply({ embeds: [successEmbed] });
 
     } catch (error) {
       console.error('Error activating service:', error);
-      await interaction.editReply('❌ There was an error activating the service! Please try again or contact an administrator.');
+      await interaction.editReply('❌ There was an error activating the service! Please try again or contact an administrator.');inistrator.');
     }
   }
 };
