@@ -1,3 +1,13 @@
+// keep_alive.js
+var http = require('http');
+
+http.createServer(function (req, res) {
+  res.write("I'm alive");
+  res.end();
+}).listen(8080, () => {
+  console.log("Keep-alive server is running on port 8080");
+});
+
 require('dotenv').config();
 const { Client, Collection, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType } = require('discord.js');
 const fs = require('fs');
