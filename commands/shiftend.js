@@ -4,87 +4,109 @@ const { sendWebhook } = require('../utils/webhook');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('shiftend')
-    .setDescription('End your staff shift and see your activity summary'),
+    .setDescription('End your staff shift')
+    .addStringOption(option =>
+      option.setName('notes')
+        .setDescription('Optional notes about your shift')
+        .setRequired(false)),
 
   async execute(interaction, client) {
     await interaction.deferReply();
 
     try {
+      // Check if user is staff
       const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164';
       const isStaff = interaction.member.roles.cache.has(staffRoleId);
       const ownersIds = ['523693281541095424', '1011347151021953145'];
       const isOwner = ownersIds.includes(interaction.user.id);
 
       if (!isStaff && !isOwner) {
-        return interaction.editReply('❌ You do not have permission to use this command!');
+        return interaction.editReply('❌ Only staff members can use this command!');
       }
 
-      // Check if staff is on shift
-      if (!global.staffShifts || !global.staffShifts.has(interaction.user.id)) {
-        return interaction.editReply('❌ You don\'t have an active shift! Use `/shiftstart` to start a shift first.');
+      // Check if shift exists
+      if (!global.activeShifts || !global.activeShifts.has(interaction.user.id)) {
+        return interaction.editReply('❌ You don\'t have an active shift! Start one with `/shiftstart`.');
       }
 
-      const staffData = global.staffShifts.get(interaction.user.id);
-
-      if (!staffData.active) {
-        return interaction.editReply('❌ You don\'t have an active shift! Use `/shiftstart` to start a shift first.');
-      }
-
-      // Calculate shift duration
-      const startTime = new Date(staffData.startTime);
+      const shiftData = global.activeShifts.get(interaction.user.id);
+      const startTime = new Date(shiftData.startTime);
       const endTime = new Date();
+      const notes = interaction.options.getString('notes') || 'No additional notes';
+
+      // Calculate duration
       const durationMs = endTime - startTime;
-      const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
-      const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+      const hours = Math.floor(durationMs / (1000 * 60 * 60));
+      const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
 
-      // Mark shift as inactive
-      staffData.active = false;
-      staffData.endTime = endTime;
-      staffData.duration = {
-        hours: durationHours,
-        minutes: durationMinutes
-      };
+      // Store shift in history
+      if (!global.shiftHistory) {
+        global.shiftHistory = [];
+      }
 
-      global.staffShifts.set(interaction.user.id, staffData);
+      global.shiftHistory.push({
+        userId: interaction.user.id,
+        startTime: startTime,
+        endTime: endTime,
+        duration: {
+          hours: hours,
+          minutes: minutes,
+          totalMinutes: Math.floor(durationMs / (1000 * 60))
+        },
+        orderCount: shiftData.orderCount || 0,
+        ticketCount: shiftData.ticketCount || 0,
+        notes: notes
+      });
+
+      // Remove active shift
+      global.activeShifts.delete(interaction.user.id);
 
       // Create shift end embed
       const shiftEmbed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **SHIFT ENDED**')
-        .setDescription(`***${interaction.user} has ended their shift***`)
+        .setDescription(`***${interaction.user} has ended their staff shift***`)
         .addFields(
-          { name: '**Duration**', value: `${durationHours}h ${durationMinutes}m`, inline: true },
-          { name: '**Orders Completed**', value: `${staffData.totals.orders}`, inline: true },
-          { name: '**Bots Deployed**', value: `${staffData.totals.botsDeployed}`, inline: true },
           { name: '**Start Time**', value: `<t:${Math.floor(startTime.getTime() / 1000)}:F>`, inline: true },
-          { name: '**End Time**', value: `<t:${Math.floor(endTime.getTime() / 1000)}:F>`, inline: true }
+          { name: '**End Time**', value: `<t:${Math.floor(endTime.getTime() / 1000)}:F>`, inline: true },
+          { name: '**Duration**', value: `\`${hours}h ${minutes}m\``, inline: true },
+          { name: '**Orders Handled**', value: `\`${shiftData.orderCount || 0}\``, inline: true },
+          { name: '**Tickets Handled**', value: `\`${shiftData.ticketCount || 0}\``, inline: true },
+          { name: '**<:PurpleLine:1336946927282950165> Notes**', value: `\`${notes}\`` }
         )
         .setColor(0x9B59B6)
         .setTimestamp()
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
         .setFooter({ text: 'ERLC Alting Support' });
 
-      // Send to webhook
-      const webhookEmbed = new EmbedBuilder()
-        .setTitle('🔴 Staff Shift Ended')
-        .setDescription(`${interaction.user.tag} has ended their shift`)
-        .addFields(
-          { name: 'Staff Member', value: `<@${interaction.user.id}>`, inline: true },
-          { name: 'Duration', value: `${durationHours}h ${durationMinutes}m`, inline: true },
-          { name: 'Orders Completed', value: `${staffData.totals.orders}`, inline: true },
-          { name: 'Bots Deployed', value: `${staffData.totals.botsDeployed}`, inline: true },
-          { name: 'Start Time', value: `<t:${Math.floor(startTime.getTime() / 1000)}:F>`, inline: true },
-          { name: 'End Time', value: `<t:${Math.floor(endTime.getTime() / 1000)}:F>`, inline: true }
-        )
-        .setColor(0xFF0000)
-        .setTimestamp();
-
-      sendWebhook('https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML', { embeds: [webhookEmbed] });
-
-      // Send success message
+      // Log in channel
       await interaction.editReply({ embeds: [shiftEmbed] });
+
+      // Log to webhook
+      const webhookEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> **STAFF SHIFT ENDED**')
+        .setDescription(`***A staff member has ended their shift***`)
+        .addFields(
+          { name: '**Staff Member**', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+          { name: '**Duration**', value: `\`${hours}h ${minutes}m\``, inline: true },
+          { name: '**Start Time**', value: `<t:${Math.floor(startTime.getTime() / 1000)}:F>`, inline: false },
+          { name: '**End Time**', value: `<t:${Math.floor(endTime.getTime() / 1000)}:F>`, inline: false },
+          { name: '**Orders Handled**', value: `\`${shiftData.orderCount || 0}\``, inline: true },
+          { name: '**Tickets Handled**', value: `\`${shiftData.ticketCount || 0}\``, inline: true },
+          { name: '**<:PurpleLine:1336946927282950165> Notes**', value: `\`${notes}\`` }
+        )
+        .setColor(0x9B59B6)
+        .setTimestamp()
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
+
+      // Use the enhanced webhook sender
+      sendWebhook(
+        process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09',
+        { embeds: [webhookEmbed] }
+      );
 
     } catch (error) {
       console.error('Error ending shift:', error);
-      await interaction.editReply('❌ There was an error ending your shift! Please try again or contact an administrator.');
+      await interaction.editReply('❌ There was an error ending your shift!');
     }
   }
 };

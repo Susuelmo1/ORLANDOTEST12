@@ -30,7 +30,15 @@ module.exports = {
     .addStringOption(option => 
       option.setName('orderid')
         .setDescription('The Order ID from orderproof')
-        .setRequired(true)),
+        .setRequired(true))
+    .addIntegerOption(option =>
+      option.setName('queue_position')
+        .setDescription('Position in queue (optional)')
+        .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('wait_time')
+        .setDescription('Estimated wait time in minutes (optional)')
+        .setRequired(false)),
 
   async execute(interaction, client) {
     await interaction.deferReply({ ephemeral: true });
@@ -156,6 +164,27 @@ module.exports = {
         used: false
       });
 
+      // Calculate queue position and estimated time based on active orders
+      let queuePosition = 1;
+      let estimatedWaitMinutes = 5; // Default wait time
+      
+      if (global.activeOrders) {
+        queuePosition = global.activeOrders.size + 1;
+        estimatedWaitMinutes = queuePosition * 2; // Assume 2 minutes per order
+      }
+
+      // Adjust queue position from command options if provided
+      const queuePositionOption = interaction.options.getInteger('queue_position');
+      const waitTimeOption = interaction.options.getInteger('wait_time');
+      
+      if (queuePositionOption && queuePositionOption > 0) {
+        queuePosition = queuePositionOption;
+      }
+      
+      if (waitTimeOption && waitTimeOption > 0) {
+        estimatedWaitMinutes = waitTimeOption;
+      }
+      
       // Create beautiful embed for staff
       const staffEmbed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **KEY GENERATED**')
@@ -166,11 +195,12 @@ module.exports = {
           { name: '**Duration**', value: `\`${expirationDays} days\``, inline: true },
           { name: '**Expires**', value: `\`${formattedExpiration}\``, inline: true },
           { name: '**Key**', value: `||**\`${key}\`**|| (ID: \`${orderId}\`)`, inline: false },
-          { name: '**Estimated Time**', value: `Based on current queue, your service will be ready in approximately \`${Math.ceil(Math.random() * 10)}\` minutes.`, inline: false },
-          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `Use \`/orderstart\` to activate this key for the user.` }
+          { name: '**Queue Position**', value: `Your ticket is #${queuePosition} in queue. Estimated wait: ${estimatedWaitMinutes} minutes.`, inline: false },
+          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `Use \`/orderstart\` to activate this key for the user. Include the key in the command.` }
         )
         .setColor(0x9B59B6)
-        .setTimestamp();
+        .setTimestamp()
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
 
       // Send key details to staff
       await interaction.editReply({ embeds: [staffEmbed] });

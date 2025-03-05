@@ -136,38 +136,50 @@ module.exports = {
         .addFields(
           { name: '**Customer**', value: `<@${orderData.userId}>`, inline: true },
           { name: '**Staff Member**', value: `${interaction.user}`, inline: true },
-          { name: '**Total Duration**', value: `${totalHours}h ${totalMinutes}m`, inline: true },
+          { name: '**Total Duration**', value: `\`${totalHours}h ${totalMinutes}m\``, inline: true },
           ...userFields,
-          { name: '**Notes**', value: notes, inline: false }
+          { name: '**Notes**', value: `\`${notes}\``, inline: false }
         )
         .setColor(0x9B59B6)
         .setTimestamp()
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
         .setFooter({ text: 'ERLC Alting Support' });
 
       // Prepare webhook participants field
       const participantsField = {
-        name: 'Participants',
-        value: `${user1} (${Math.floor(duration1 / 60)}h ${duration1 % 60}m)` +
-          (user2 ? `\n${user2} (${Math.floor(duration2 / 60)}h ${duration2 % 60}m)` : '') +
-          (user3 ? `\n${user3} (${Math.floor(duration3 / 60)}h ${duration3 % 60}m)` : ''),
+        name: '**Participants**',
+        value: `${user1} (\`${Math.floor(duration1 / 60)}h ${duration1 % 60}m\`)` +
+          (user2 ? `\n${user2} (\`${Math.floor(duration2 / 60)}h ${duration2 % 60}m\`)` : '') +
+          (user3 ? `\n${user3} (\`${Math.floor(duration3 / 60)}h ${duration3 % 60}m\`)` : ''),
         inline: false
       };
 
+      // Add key information if available
+      if (orderData.key) {
+        completionEmbed.addFields({ name: '**Key**', value: `\`${orderData.key}\``, inline: true });
+      }
+
       // Log to webhook
       const webhookEmbed = new EmbedBuilder()
-        .setTitle('✅ Order Completed')
-        .setDescription(`Order ID: \`${orderId}\` has been completed`)
+        .setTitle('<:purplearrow:1337594384631332885> **ORDER COMPLETED**')
+        .setDescription(`***Order ID: \`${orderId}\` has been completed***`)
         .addFields(
-          { name: 'Customer', value: `<@${orderData.userId}>`, inline: true },
-          { name: 'Staff Member', value: `${interaction.user}`, inline: true },
-          { name: 'Total Duration', value: `${totalHours}h ${totalMinutes}m`, inline: true },
-          { name: 'Bots Count', value: `${orderData.botsCount || 'N/A'}`, inline: true },
+          { name: '**Customer**', value: `<@${orderData.userId}>`, inline: true },
+          { name: '**Staff Member**', value: `${interaction.user}`, inline: true },
+          { name: '**Total Duration**', value: `\`${totalHours}h ${totalMinutes}m\``, inline: true },
+          { name: '**Bots Count**', value: `\`${orderData.botsCount || 'N/A'}\``, inline: true },
           participantsField,
-          { name: 'End Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
-          { name: 'Notes', value: notes, inline: false }
+          { name: '**End Time**', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
+          { name: '**Notes**', value: `\`${notes}\``, inline: false }
         )
-        .setColor(0x00FFAA)
-        .setTimestamp();
+        .setColor(0x9B59B6)
+        .setTimestamp()
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
+      
+      // Add key information to webhook if available
+      if (orderData.key) {
+        webhookEmbed.addFields({ name: '**Key**', value: `\`${orderData.key}\``, inline: true });
+      }
       
       // Send to webhook
       sendWebhook('https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML', { embeds: [webhookEmbed] });

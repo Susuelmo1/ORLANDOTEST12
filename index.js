@@ -352,6 +352,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
 
     // Add VIP button to the ticket panel
     if (ticketType === 'vip') {
+      // Add VIP button to the ticket panel
       const vipButtons = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
@@ -368,8 +369,21 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
             .setStyle(ButtonStyle.Secondary)
         );
 
+      // Create VIP packages embed
+      const vipEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> **VIP PACKAGES**')
+        .setDescription('***Please select a VIP package or use one of the links below:***')
+        .addFields(
+          { 
+            name: '**__VIP Packages__**', 
+            value: '> **Lifetime:** [Copy Me](https://www.roblox.com/catalog/98202400395342)\n> **Month:** [Copy Me](https://www.roblox.com/catalog/85144990668024)\n> **Week:** [Copy Me](https://www.roblox.com/catalog/87544796577389)'
+          }
+        )
+        .setColor(0x9B59B6)
+        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
+
       await ticketChannel.send({ 
-        content: '**<:purplearrow:1337594384631332885> Please select a VIP package:**', 
+        embeds: [vipEmbed],
         components: [vipButtons] 
       });
     } else if (ticketType === 'order') {
@@ -488,7 +502,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
     global.ticketStats.byUser.set(user.id, userStats);
 
     // Log to webhook if configured
-    
+
 
     // Handle DM context
     if (fromDM) {
@@ -897,19 +911,48 @@ client.on('interactionCreate', async interaction => {
               productPrice = 'Unknown Price';
           }
 
-          // Send confirmation message
+          // Send confirmation message with appropriate product links
           const productEmbed = new EmbedBuilder()
             .setTitle('<:purplearrow:1337594384631332885> **PRODUCT SELECTED**')
-            .setDescription(`You have selected: **${productInfo}**`)
-            .addFields(
-              { name: 'Price', value: productPrice, inline: true },
-              { 
-                name: 'Next Steps', 
-                value: 'Wait for staff to verify your order proof and process your payment.' 
-              }
-            )
+            .setDescription(`***You have selected: ${productInfo}***`)
             .setColor(0x9B59B6)
-            .setTimestamp();
+            .setTimestamp()
+            .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
+
+          // Add fields based on product type
+          productEmbed.addFields({ 
+            name: '**Price**', 
+            value: productPrice, 
+            inline: true 
+          });
+
+          // Add appropriate product links based on selection
+          if (product.includes('vip')) {
+            productEmbed.addFields({ 
+              name: '**__VIP__**', 
+              value: '> **Lifetime:** [Copy Me](https://www.roblox.com/catalog/98202400395342)\n> **Month:** [Copy Me](https://www.roblox.com/catalog/85144990668024)\n> **Week:** [Copy Me](https://www.roblox.com/catalog/87544796577389)'
+            });
+          } else {
+            // Standard bot packages
+            productEmbed.addFields({ 
+              name: '**__Bot Packages__**', 
+              value: '> **40 Bots:** [Copy Me](https://www.roblox.com/catalog/109981296260142)\n> **30 Bots:** [Copy Me](https://www.roblox.com/catalog/138973868529963)\n> **25 Bots:** [Copy Me](https://www.roblox.com/catalog/114907246125026)\n> **20 Bots:** [Copy Me](https://www.roblox.com/catalog/90251095378460)\n> **15 Bots:** [Copy Me](https://www.roblox.com/catalog/114311203640066)\n> **10 Bots:** [Copy Me](https://www.roblox.com/catalog/110507656911368)'
+            });
+
+            // Add full server option if applicable
+            if (product.includes('full_server') || product.includes('refill')) {
+              productEmbed.addFields({ 
+                name: '**__Full Server__**', 
+                value: '> **Full Server:** [Copy Me](https://www.roblox.com/catalog/101932399625607)\n> **Refill:** [Copy Me](https://www.roblox.com/catalog/133192264732348)'
+              });
+            }
+          }
+
+          // Add next steps
+          productEmbed.addFields({ 
+            name: '**Next Steps**', 
+            value: 'Wait for staff to verify your order proof and process your payment.' 
+          });
 
           await channel.send({ embeds: [productEmbed] });
           await interaction.editReply('✅ Product selection confirmed!');

@@ -106,16 +106,17 @@ module.exports = {
         // Try to DM the user before softbanning
         try {
           const dmEmbed = new EmbedBuilder()
-            .setTitle(`You have been softbanned from ${interaction.guild.name}`)
-            .setDescription(`A moderator has softbanned you from the server.`)
+            .setTitle('<:purplearrow:1337594384631332885> **TEMPORARY REMOVAL**')
+            .setDescription(`***You have been temporarily removed from ${interaction.guild.name}***`)
             .addFields(
-              { name: 'Reason', value: reason },
-              { name: 'Softbanned by', value: interaction.user.tag },
-              { name: 'Note', value: 'A softban removes your recent messages but you can rejoin the server immediately.' }
+              { name: '**Reason**', value: `\`${reason}\`` },
+              { name: '**Action By**', value: `\`${interaction.user.tag}\`` },
+              { name: '**<:PurpleLine:1336946927282950165> Important Information**', value: '> This is a temporary removal to maintain server quality.\n> You may rejoin the server after you have calmed down.\n> __***Please note your order will be placed at the end of the queue upon return.***__' }
             )
             .setColor(0x9B59B6)
             .setFooter({ text: 'ERLC Alting Support' })
-            .setTimestamp();
+            .setTimestamp()
+            .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
 
           await user.send({ embeds: [dmEmbed] });
         } catch (dmError) {
