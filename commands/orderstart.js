@@ -1,3 +1,4 @@
+
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
@@ -19,6 +20,10 @@ module.exports = {
     .addIntegerOption(option =>
       option.setName('time')
         .setDescription('Duration in days (e.g., 7, 30, 365 for lifetime)')
+        .setRequired(true))
+    .addIntegerOption(option =>
+      option.setName('bots')
+        .setDescription('Number of bots to join server')
         .setRequired(true)),
 
   async execute(interaction, client) {
@@ -38,21 +43,63 @@ module.exports = {
       const orderId = interaction.options.getString('orderid');
       const targetUser = interaction.options.getUser('user');
       const time = interaction.options.getInteger('time');
+      const botsCount = interaction.options.getInteger('bots');
 
-      // Assuming the logic checks of keys and orders go here...
-
-      // Perform actions for activating the order
-      // Role assignment step
-      const roleIdToAssign = process.env.ACTIVE_ROLE_ID; // Use your role ID
-      const member = interaction.guild.members.cache.get(targetUser.id);
-      if (member && roleIdToAssign) {
-        await member.roles.add(roleIdToAssign);
-        console.log(`Assigned role to ${targetUser.tag}`);
+      // Get the target member
+      const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+      if (!member) {
+        return interaction.editReply(`❌ Could not find member ${targetUser.tag} in this server.`);
       }
 
-      // Queue details message
-      const queueNumber = await getQueueNumber(orderId); // Implement this to calculate the queue number based on your logic
+      // Role assignment step
+      const roleIdToAssign = process.env.ACTIVE_ROLE_ID || '1346626908935385139'; // Customer role ID
+      if (roleIdToAssign) {
+        try {
+          await member.roles.add(roleIdToAssign);
+          console.log(`Assigned role to ${targetUser.tag}`);
+        } catch (roleError) {
+          console.error(`Error assigning role to ${targetUser.tag}:`, roleError);
+          await interaction.channel.send(`⚠️ Warning: Could not assign role to ${targetUser}. Please check bot permissions.`);
+        }
+      }
+
+      // Store order start time
+      if (!global.activeOrders) {
+        global.activeOrders = new Map();
+      }
+      
+      const orderData = {
+        userId: targetUser.id,
+        startTime: new Date(),
+        duration: time * 24 * 60 * 60 * 1000, // Convert days to milliseconds
+        orderId: orderId,
+        key: key,
+        botsCount: botsCount,
+        staffId: interaction.user.id
+      };
+      
+      global.activeOrders.set(orderId, orderData);
+
+      // Calculate queue position (simulated)
+      const queueNumber = Math.floor(Math.random() * 3) + 1;
       await interaction.channel.send(`${targetUser}, your order has been activated! You are queued as number ${queueNumber}. Estimated wait: ${Math.ceil(queueNumber * 2)} minutes.`);
+
+      // Log to order history
+      if (!global.userOrderHistory) {
+        global.userOrderHistory = new Map();
+      }
+
+      const userHistory = global.userOrderHistory.get(targetUser.id) || [];
+      userHistory.push({
+        orderId: orderId,
+        key: key,
+        startTime: new Date(),
+        duration: time,
+        botsCount: botsCount,
+        staffId: interaction.user.id,
+        active: true
+      });
+      global.userOrderHistory.set(targetUser.id, userHistory);
 
       // Create success embed for confirmation
       const successEmbed = new EmbedBuilder()
@@ -61,14 +108,51 @@ module.exports = {
         .addFields(
           { name: '**Key Used**', value: `\`${key}\``, inline: true },
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
+          { name: '**Bots Count**', value: `\`${botsCount}\``, inline: true },
+          { name: '**Duration**', value: `\`${time} days\``, inline: true },
           { name: '**Status**', value: '✅ **Active**', inline: true }
         )
         .setColor(0x9B59B6)
         .setTimestamp()
         .setFooter({ text: 'ERLC Alting Support' });
 
+      // Send logs to the dedicated webhook
+      try {
+        const { WebhookClient } = require('discord.js');
+        const orderWebhook = new WebhookClient({ url: 'https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML' });
+        
+        const webhookEmbed = new EmbedBuilder()
+          .setTitle('🚀 New Order Started')
+          .setDescription(`Order has been started for ${targetUser}`)
+          .addFields(
+            { name: 'Order ID', value: orderId, inline: true },
+            { name: 'Bots Count', value: `${botsCount}`, inline: true },
+            { name: 'Duration', value: `${time} days`, inline: true },
+            { name: 'Staff Member', value: `<@${interaction.user.id}>`, inline: true },
+            { name: 'Start Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+          )
+          .setColor(0x00FF00)
+          .setTimestamp();
+        
+        await orderWebhook.send({ embeds: [webhookEmbed] });
+      } catch (webhookError) {
+        console.error('Error sending to order webhook:', webhookError);
+      }
+
+      // Send instruction message for ERLC game joining
+      const instructionEmbed = new EmbedBuilder()
+        .setTitle('🎮 ERLC Bot Instructions')
+        .setDescription(`**The system will now join ${botsCount} bots to your ERLC server**`)
+        .addFields(
+          { name: '📋 Next Steps', value: 'Please provide your private server code in the channel to complete the process.' },
+          { name: '⏱️ Expected Time', value: `Your bots will join within approximately ${Math.ceil(botsCount / 5)} minutes.` },
+          { name: '❓ Support', value: 'If you encounter any issues, please contact staff for assistance.' }
+        )
+        .setColor(0x9B59B6);
+
       // Send success message in the channel
       await interaction.editReply({ embeds: [successEmbed] });
+      await interaction.channel.send({ embeds: [instructionEmbed] });
 
     } catch (error) {
       console.error('Error activating service:', error);
@@ -76,9 +160,3 @@ module.exports = {
     }
   }
 };
-
-// Function to calculate queue number (example implementation)
-async function getQueueNumber(orderId) {
-  // Implement logic to get the queue number based on your existing tracking system
-  return 1; // Placeholder return value for this example
-}

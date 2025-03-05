@@ -1,32 +1,37 @@
 
 const { WebhookClient, EmbedBuilder } = require('discord.js');
 
-// Create a singleton webhook instance
-let webhookClient = null;
+// Store webhook clients
+const webhookClients = new Map();
 
 /**
- * Get or initialize the webhook client
- * @returns {WebhookClient|null} The webhook client or null if URL is not set
+ * Get or initialize a webhook client
+ * @param {string} url - The webhook URL
+ * @returns {WebhookClient|null} The webhook client or null if URL is invalid
  */
-function getWebhookClient() {
-  if (webhookClient) return webhookClient;
+function getWebhookClient(url) {
+  if (!url) return null;
   
-  const webhookUrl = process.env.LOG_WEBHOOK_URL;
-  if (webhookUrl) {
-    try {
-      webhookClient = new WebhookClient({ url: webhookUrl });
-      return webhookClient;
-    } catch (error) {
-      console.error('Error initializing webhook client:', error);
-      return null;
-    }
+  // Return existing client if already created
+  if (webhookClients.has(url)) {
+    return webhookClients.get(url);
   }
-  return null;
+  
+  // Create new client
+  try {
+    const client = new WebhookClient({ url });
+    webhookClients.set(url, client);
+    return client;
+  } catch (error) {
+    console.error('Error initializing webhook client:', error);
+    return null;
+  }
 }
 
 /**
- * Log an event to the webhook
+ * Log an event to a webhook
  * @param {Object} options - Logging options
+ * @param {string} options.webhookUrl - The webhook URL to send to
  * @param {string} options.title - The title of the log
  * @param {string} options.description - The description of the log
  * @param {Array} options.fields - Fields to add to the embed
@@ -37,7 +42,7 @@ function getWebhookClient() {
  * @returns {Promise<void>}
  */
 async function logToWebhook(options) {
-  const webhook = getWebhookClient();
+  const webhook = getWebhookClient(options.webhookUrl || process.env.LOG_WEBHOOK_URL);
   if (!webhook) return;
   
   try {
@@ -66,11 +71,25 @@ async function logToWebhook(options) {
     }
     
     await webhook.send({ embeds: [embed] });
+    return true;
   } catch (error) {
     console.error('Error sending webhook log:', error);
+    return false;
   }
 }
 
+/**
+ * Send order logs to the order webhook
+ */
+async function logOrder(options) {
+  return logToWebhook({
+    webhookUrl: 'https://discord.com/api/webhooks/1346648189117272174/QK2jHQDKoDwxM4Ec-3gdnDEfsjHj8vGRFuM5tFwdYL-WKAi3TiOYwMVi0ok8wZOEsAML',
+    ...options
+  });
+}
+
 module.exports = {
-  logToWebhook
+  logToWebhook,
+  logOrder,
+  getWebhookClient
 };
