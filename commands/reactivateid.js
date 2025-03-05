@@ -11,10 +11,6 @@ module.exports = {
         .setDescription('The Order ID to reactivate')
         .setRequired(true))
     .addStringOption(option =>
-      option.setName('token')
-        .setDescription('Security token for reactivation')
-        .setRequired(true))
-    .addStringOption(option =>
       option.setName('server_code')
         .setDescription('ERLC private server code')
         .setRequired(true)),
@@ -33,7 +29,6 @@ module.exports = {
       }
 
       const orderId = interaction.options.getString('orderid');
-      const token = interaction.options.getString('token');
       const serverCode = interaction.options.getString('server_code');
 
       // Check if the order exists in the active orders map
@@ -44,13 +39,6 @@ module.exports = {
       // Get the order data
       const orderData = global.activeOrders.get(orderId);
       
-      // Verify the token (simple implementation - you might want to make this more secure)
-      // For example, you could use the first 6 characters of the key as a token
-      const expectedToken = orderData.key.substring(0, 6);
-      if (token !== expectedToken) {
-        return interaction.editReply(`❌ Invalid token for Order ID \`${orderId}\`. Reactivation failed.`);
-      }
-
       // Get the target user
       const targetUser = await client.users.fetch(orderData.userId).catch(() => null);
       if (!targetUser) {

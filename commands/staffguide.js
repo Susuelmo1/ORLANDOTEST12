@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
@@ -54,7 +53,7 @@ module.exports = {
         },
         {
           name: '**🔄 `/reactivateid`**',
-          value: '> Reactivates an existing order using Order ID and token.\n> **Usage:** `/reactivateid orderid:ORDER12345 token:ABC123 server_code:erlccode`\n> **Note:** The token is the first 6 characters of the customer\'s key'
+          value: '> Reactivates an order using just the order ID\n> **Usage:** `/reactivateid orderid:ORDER-12345 server_code:ABCXYZ`',
         },
         {
           name: '**⏹️ `/orderend`**',
