@@ -57,9 +57,14 @@ module.exports = {
       const user = interaction.options.getUser('user');
       const orderId = interaction.options.getString('orderid');
 
+      // Check if client.orderProofs exists
+      if (!client.orderProofs) {
+        client.orderProofs = new Map();
+      }
+      
       // Check if order ID exists
-      if (!client.orderProofs || !client.orderProofs.has(orderId)) {
-        return interaction.editReply(`❌ Order ID \`${orderId}\` not found! Make sure the user has submitted order proof first.`);
+      if (!client.orderProofs.has(orderId)) {
+        return interaction.editReply(`❌ Order ID \`${orderId}\` not found! Make sure the user has entered the correct ID and has submitted order proof first.`);
       }
 
       // Define expiration period based on package
