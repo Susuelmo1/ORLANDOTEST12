@@ -1,4 +1,3 @@
-
 require('dotenv').config();
 const { Client, Collection, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType } = require('discord.js');
 const fs = require('fs');
@@ -1069,5 +1068,7 @@ const keepAlive = require('./keep_alive');
 keepAlive();
 
 // Log in to Discord
+client.once('ready', () => {
+  console.log(`Logged in as ${client.user.tag}`);
+});
 client.login(process.env.DISCORD_TOKEN);
-
