@@ -352,10 +352,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
         .setFooter({ text: 'ERLC Alting Support' });
     }
 
-    // Just ping the user at the top, without any server alter text
-    await ticketChannel.send(`${user}`);
-    
-    // Then send the welcome message and buttons to the ticket channel
+    // Send the welcome message and buttons to the ticket channel without pinging the user
     await ticketChannel.send({ embeds: [welcomeEmbed], components: [ticketButtons] });
 
     // Add VIP button to the ticket panel
