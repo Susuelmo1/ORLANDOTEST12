@@ -24,6 +24,10 @@ externalPort = 3000
 localPort = 8080
 externalPort = 80
 
+[[ports]]
+localPort = 8181
+externalPort = 3001
+
 [workflows]
 runButton = "Start Bot"
 

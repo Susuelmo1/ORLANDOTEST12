@@ -8,7 +8,11 @@
     "dev": "nodemon index.js",
     "update": "npm update",
     "audit": "npm audit fix",
-    "prune": "npm prune --production"
+    "prune": "npm prune --production",
+    "postinstall": "npm install"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   },
   "keywords": [
     "discord",
