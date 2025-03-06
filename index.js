@@ -912,7 +912,7 @@ client.on('interactionCreate', async interaction => {
           // Add fields based on product type
           productEmbed.addFields({ 
             name: '**Price**', 
-            value: `<:PAYPAL:1337607920447131769> ${productPrice}`, 
+            value: `<:PAYPAL:1337607920447131769> ${productPrice} (For the day)`, 
             inline: true 
           });
 
