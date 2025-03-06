@@ -21,7 +21,7 @@ module.exports = {
 
       // Create the main handbook embed
       const handbookEmbed = new EmbedBuilder()
-        .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **STAFF HANDBOOK**')
+        .setTitle('<:purplearrow:1337594384631332885> **STAFF HANDBOOK**')
         .setDescription('***Complete guide for all staff commands and their proper usage***')
         .setColor(0x9B59B6)
         .setTimestamp();
