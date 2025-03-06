@@ -1,141 +1,110 @@
-
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('role')
-    .setDescription('Ban and immediately unban a user to delete their messages')
+    .setDescription('Assign a role to a user')
     .addUserOption(option => 
       option.setName('user')
-        .setDescription('User to softban')
+        .setDescription('User to assign the role to')
+        .setRequired(true))
+    .addRoleOption(option => 
+      option.setName('role')
+        .setDescription('Role to assign')
         .setRequired(true))
     .addStringOption(option => 
       option.setName('reason')
-        .setDescription('Reason for the softban')
-        .setRequired(true))
-    .addIntegerOption(option => 
-      option.setName('days')
-        .setDescription('Number of days of messages to delete (1-7)')
-        .setMinValue(1)
-        .setMaxValue(7)
-        .setRequired(true))
-    .addChannelOption(option => 
-      option.setName('log_channel')
-        .setDescription('Channel to log the softban'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+        .setDescription('Reason for assigning the role')
+        .setRequired(true)),
 
   async execute(interaction, client) {
     await interaction.deferReply();
 
-    const user = interaction.options.getUser('user');
-    const reason = interaction.options.getString('reason');
-    const days = interaction.options.getInteger('days');
-    const logChannel = interaction.options.getChannel('log_channel');
-
-    // Confirmation embed
-    const confirmEmbed = new EmbedBuilder()
-      .setTitle('Softban Confirmation')
-      .setDescription(`Are you sure you want to softban **${user.tag}**?`)
-      .addFields(
-        { name: 'User', value: `<@${user.id}>`, inline: true },
-        { name: 'Reason', value: reason, inline: true },
-        { name: 'Delete Messages', value: `${days} days`, inline: true }
-      )
-      .setColor('#FF6347')
-      .setFooter({ text: 'A softban will ban and immediately unban the user, deleting their messages.' })
-      .setTimestamp();
-
-    const confirmRow = {
-      type: 1,
-      components: [
-        {
-          type: 2,
-          style: 3,
-          label: 'Confirm',
-          custom_id: 'softban_confirm'
-        },
-        {
-          type: 2,
-          style: 4,
-          label: 'Cancel',
-          custom_id: 'softban_cancel'
-        }
-      ]
-    };
-
-    const confirmMessage = await interaction.editReply({ embeds: [confirmEmbed], components: [confirmRow] });
-
     try {
-      const confirmInteraction = await confirmMessage.awaitMessageComponent({ 
-        filter: i => i.user.id === interaction.user.id,
-        time: 30000 
-      });
+      // Check if user is staff
+      const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164';
+      const isStaff = interaction.member.roles.cache.has(staffRoleId);
+      const ownersIds = ['523693281541095424', '1011347151021953145'];
+      const isOwner = ownersIds.includes(interaction.user.id);
 
-      if (confirmInteraction.customId === 'softban_cancel') {
-        await confirmInteraction.update({ content: '❌ Softban cancelled.', embeds: [], components: [] });
-        return;
+      if (!isStaff && !isOwner) {
+        return interaction.editReply('❌ Only staff members can use this command!');
       }
 
-      await confirmInteraction.update({ content: '⏳ Processing softban...', embeds: [], components: [] });
+      const user = interaction.options.getUser('user');
+      const role = interaction.options.getRole('role');
+      const reason = interaction.options.getString('reason');
 
+      // Get the member object
+      const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+      if (!member) {
+        return interaction.editReply(`❌ Could not find member ${user.tag} in this server.`);
+      }
+
+      // Check if the bot has permission to manage roles
+      if (!interaction.guild.members.me.permissions.has(PermissionFlagsBits.ManageRoles)) {
+        return interaction.editReply('❌ I don\'t have permission to manage roles!');
+      }
+
+      // Check if the role is higher than the bot's highest role
+      if (role.position >= interaction.guild.members.me.roles.highest.position) {
+        return interaction.editReply('❌ I cannot assign a role that is higher than or equal to my highest role!');
+      }
+
+      // Check if the role is higher than the user's highest role
+      if (role.position >= interaction.member.roles.highest.position && !isOwner) {
+        return interaction.editReply('❌ You cannot assign a role that is higher than or equal to your highest role!');
+      }
+
+      // Assign the role
       try {
-        const member = await interaction.guild.members.fetch(user.id);
+        await member.roles.add(role.id, reason);
+      } catch (error) {
+        console.error('Error assigning role:', error);
+        return interaction.editReply(`❌ Failed to assign role: ${error.message}`);
+      }
 
-        // DM the user before softbanning
-        try {
-          const dmEmbed = new EmbedBuilder()
-            .setTitle(`You have been softbanned from ${interaction.guild.name}`)
-            .addFields(
-              { name: 'Reason', value: reason },
-              { name: 'Softbanned by', value: interaction.user.tag },
-              { name: 'Note', value: 'A softban removes your recent messages but you can rejoin the server immediately.' }
-            )
-            .setColor('#FF6347')
-            .setTimestamp();
+      // Create success embed
+      const successEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> **ROLE ASSIGNED**')
+        .setDescription(`***Successfully assigned role to ${user}***`)
+        .addFields(
+          { name: '**User**', value: `${user}`, inline: true },
+          { name: '**Role**', value: `${role}`, inline: true },
+          { name: '**Reason**', value: reason, inline: false },
+          { name: '**Assigned By**', value: `${interaction.user}`, inline: true }
+        )
+        .setColor(0x9B59B6)
+        .setTimestamp();
 
-          await user.send({ embeds: [dmEmbed] });
-        } catch (error) {
-          console.log(`Could not send DM to ${user.tag}`);
-        }
-
-        // Ban then unban
-        await interaction.guild.members.ban(user.id, { deleteMessageDays: days, reason: `Softban: ${reason} | By: ${interaction.user.tag}` });
-        await interaction.guild.members.unban(user.id, `Softban (automatic unban) | By: ${interaction.user.tag}`);
-
-        // Create log
-        const softbanEmbed = new EmbedBuilder()
-          .setTitle('User Softbanned')
-          .addFields(
-            { name: 'User', value: `${user.tag} (${user.id})`, inline: true },
-            { name: 'Moderator', value: `${interaction.user.tag}`, inline: true },
-            { name: 'Reason', value: reason },
-            { name: 'Deleted Messages', value: `${days} days` }
-          )
-          .setColor('#FF6347')
-          .setTimestamp();
-
-        // Send to specified log channel if provided
-        if (logChannel) {
-          await logChannel.send({ embeds: [softbanEmbed] });
-        }
-
-        // Log to webhook if set
+      // Log to webhook if configured
+      try {
         if (process.env.LOG_WEBHOOK_URL) {
           const { WebhookClient } = require('discord.js');
           const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
-          await webhook.send({ embeds: [softbanEmbed] });
+
+          const logEmbed = new EmbedBuilder()
+            .setTitle('Role Assigned')
+            .setDescription(`A role has been assigned to a user`)
+            .addFields(
+              { name: 'User', value: `${user.tag} (${user.id})`, inline: true },
+              { name: 'Role', value: `${role.name}`, inline: true },
+              { name: 'Reason', value: reason, inline: false },
+              { name: 'Assigned By', value: `${interaction.user.tag} (${interaction.user.id})`, inline: true }
+            )
+            .setColor(0x9B59B6)
+            .setTimestamp();
+
+          await webhook.send({ embeds: [logEmbed] });
         }
-
-        await interaction.editReply({ content: `✅ Successfully softbanned **${user.tag}** | Reason: ${reason}` });
-
-      } catch (error) {
-        console.error('Error softbanning user:', error);
-        await interaction.editReply({ content: `❌ Failed to softban ${user.tag}: ${error.message}` });
+      } catch (webhookError) {
+        console.error('Error sending webhook:', webhookError);
       }
 
+      await interaction.editReply({ embeds: [successEmbed] });
     } catch (error) {
-      console.error('Confirmation timed out or error:', error);
-      await interaction.editReply({ content: '❌ Softban confirmation timed out or was cancelled.', embeds: [], components: [] });
+      console.error('Error with role command:', error);
+      await interaction.editReply('❌ There was an error assigning the role! Please try again or contact an administrator.');
     }
   }
 };

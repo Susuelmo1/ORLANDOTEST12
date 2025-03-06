@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { sendWebhook } = require('../utils/webhook');
 const https = require('https');
 const puppeteer = require('puppeteer');
@@ -80,9 +80,26 @@ module.exports = {
       
       if (roleIdToAssign) {
         try {
-          await member.roles.add(roleIdToAssign);
-          console.log(`Assigned role to ${targetUser.tag}`);
-          roleAssigned = true;
+          // Make sure the bot has permission to manage roles
+          if (!interaction.guild.members.me.permissions.has(PermissionFlagsBits.ManageRoles)) {
+            console.error(`Bot does not have permission to manage roles`);
+          } else {
+            // Get the role object
+            const roleToAssign = await interaction.guild.roles.fetch(roleIdToAssign).catch(() => null);
+            
+            if (!roleToAssign) {
+              console.error(`Could not find role with ID ${roleIdToAssign}`);
+            } else {
+              // Check if the role is higher than the bot's highest role
+              if (roleToAssign.position >= interaction.guild.members.me.roles.highest.position) {
+                console.error(`Cannot assign role that is higher than the bot's highest role`);
+              } else {
+                await member.roles.add(roleIdToAssign, 'Assigned by orderstart command');
+                console.log(`Assigned role to ${targetUser.tag}`);
+                roleAssigned = true;
+              }
+            }
+          }
         } catch (roleError) {
           console.error(`Error assigning role to ${targetUser.tag}:`, roleError);
         }

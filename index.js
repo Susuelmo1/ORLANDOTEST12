@@ -558,26 +558,25 @@ client.on('interactionCreate', async interaction => {
       if (!command) return;
 
       // Check permissions for specific commands
-      if (['ban', 'kick', 'dmall', 'ticketmaker'].includes(interaction.commandName)) {
-        const ownersIds = ['523693281541095424', '1011347151021953145']; // Owner IDs
-        const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164'; // Server Alter role ID
+      const ownersIds = ['523693281541095424', '1011347151021953145']; // Owner IDs
+      const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164'; // Server Alter role ID
 
-        // Owner-only commands
-        if (['ban', 'kick', 'dmall'].includes(interaction.commandName)) {
-          if (!ownersIds.includes(interaction.user.id)) {
-            return interaction.reply({ content: '❌ You do not have permission to use this command!', flags: { ephemeral: true } });
-          }
+      // Owner-only commands
+      if (['ban', 'kick', 'dmall'].includes(interaction.commandName)) {
+        if (!ownersIds.includes(interaction.user.id)) {
+          return interaction.reply({ content: '❌ You do not have permission to use this command!', flags: { ephemeral: true } });
         }
+      }
 
-        // Staff-only commands
-        if (['ticketmaker', 'generatekey', 'softban', 'orderid', 'orderstart'].includes(interaction.commandName)) {
-          const member = interaction.member;
-          const hasStaffRole = member.roles.cache.has(staffRoleId);
-          const isOwner = ownersIds.includes(interaction.user.id);
+      // Staff-only commands
+      if (['ticketmaker', 'generatekey', 'softban', 'orderid', 'orderstart', 'role', 'staffhandbook', 
+           'ordercancel', 'orderend', 'orderhistory', 'reactivateid', 'shiftstart', 'shiftend'].includes(interaction.commandName)) {
+        const member = interaction.member;
+        const hasStaffRole = member.roles.cache.has(staffRoleId);
+        const isOwner = ownersIds.includes(interaction.user.id);
 
-          if (!hasStaffRole && !isOwner) {
-            return interaction.reply({ content: '❌ Only staff members can use this command!', flags: { ephemeral: true } });
-          }
+        if (!hasStaffRole && !isOwner) {
+          return interaction.reply({ content: '❌ Only staff members can use this command!', flags: { ephemeral: true } });
         }
       }
 
