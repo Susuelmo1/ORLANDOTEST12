@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { logOrderCompletion } = require('../utils/webhook');
 
@@ -126,16 +125,16 @@ module.exports = {
 
         if (userTickets.size > 0) {
           const ticketChannel = userTickets.first();
-          
+
           // Determine which category to move to
           let targetCategoryId = generalSupportCategoryId; // Default to general support
           if (reason === 'payment_issue') {
             targetCategoryId = unpaidCategoryId; // Move to unpaid if payment issue
           }
-          
+
           // Move the channel
           await ticketChannel.setParent(targetCategoryId, { lockPermissions: false });
-          
+
           // Log the move
           console.log(`Moved ticket ${ticketChannel.name} to category ${targetCategoryId}`);
         }
@@ -194,7 +193,7 @@ module.exports = {
       if (!global.userOrderHistory) {
         global.userOrderHistory = new Map();
       }
-      
+
       const userHistory = global.userOrderHistory.get(userId) || [];
       userHistory.push({
         orderId,

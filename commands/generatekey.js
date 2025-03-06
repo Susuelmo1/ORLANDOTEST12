@@ -62,10 +62,26 @@ module.exports = {
         client.orderProofs = new Map();
       }
       
-      // Check if order ID exists
-      if (!client.orderProofs.has(orderId)) {
-        return interaction.editReply(`❌ Order ID \`${orderId}\` not found! Make sure the user has entered the correct ID and has submitted order proof first.`);
+      // Check if order ID exists (case-insensitive matching)
+      let orderFound = false;
+      let correctOrderId = '';
+      
+      if (client.orderProofs) {
+        for (const [key, value] of client.orderProofs.entries()) {
+          if (key.toUpperCase() === orderId.toUpperCase()) {
+            orderFound = true;
+            correctOrderId = key;
+            break;
+          }
+        }
       }
+      
+      if (!orderFound) {
+        return interaction.editReply(`❌ Order ID \`${orderId}\` not found! Make sure the user has submitted order proof first.`);
+      }
+      
+      // Use the correct case for further processing
+      orderId = correctOrderId;
 
       // Define expiration period based on package
       let expirationDays = 1; // Default to 1 day

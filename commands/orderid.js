@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
@@ -26,16 +25,16 @@ module.exports = {
         return interaction.editReply('❌ Only staff members and support crew can use this command!');
       }
 
-      const orderId = interaction.options.getString('orderid');
+      const orderId = interaction.options.getString('orderid').trim(); //Added trim to remove extra spaces
 
       // Check if order ID exists
       if (!client.orderProofs || !client.orderProofs.has(orderId)) {
-        return interaction.editReply(`❌ Order ID \`${orderId}\` not found!`);
+        return interaction.editReply(`❌ Order ID \`${orderId}\` not found! Make sure the user has submitted order proof first.`);
       }
 
       // Get order details
       const orderDetails = client.orderProofs.get(orderId);
-      
+
       // Format timestamp
       const orderDate = orderDetails.timestamp ? new Date(orderDetails.timestamp) : new Date();
       const formattedDate = orderDate.toLocaleDateString('en-US', {

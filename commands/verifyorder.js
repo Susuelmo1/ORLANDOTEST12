@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { sendWebhook } = require('../utils/webhook');
 
@@ -23,7 +22,7 @@ module.exports = {
       }
 
       const orderData = global.activeOrders.get(orderId);
-      
+
       // Check if the user is the order owner
       if (orderData.userId !== interaction.user.id) {
         return interaction.editReply('❌ This order does not belong to you.');
@@ -59,7 +58,7 @@ module.exports = {
       if (global.userOrderHistory && global.userOrderHistory.has(interaction.user.id)) {
         const userHistory = global.userOrderHistory.get(interaction.user.id);
         const orderIndex = userHistory.findIndex(order => order.orderId === orderId);
-        
+
         if (orderIndex !== -1) {
           userHistory[orderIndex].verified = true;
           global.userOrderHistory.set(interaction.user.id, userHistory);

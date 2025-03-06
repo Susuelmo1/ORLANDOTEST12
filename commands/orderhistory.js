@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
@@ -19,9 +18,9 @@ module.exports = {
       const isStaff = interaction.member.roles.cache.has(staffRoleId);
       const ownersIds = ['523693281541095424', '1011347151021953145'];
       const isOwner = ownersIds.includes(interaction.user.id);
-      
+
       const targetUser = interaction.options.getUser('user') || interaction.user;
-      
+
       // If checking someone else's history, require staff or owner permissions
       if (targetUser.id !== interaction.user.id && !isStaff && !isOwner) {
         return interaction.editReply('❌ You can only view your own order history!');
@@ -33,7 +32,7 @@ module.exports = {
       }
 
       const orderHistory = global.userOrderHistory.get(targetUser.id);
-      
+
       // Create an embed to display order history
       const historyEmbed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **ORDER HISTORY**')
@@ -51,29 +50,29 @@ module.exports = {
         const sortedHistory = [...orderHistory].sort((a, b) => 
           new Date(b.generatedAt) - new Date(a.generatedAt)
         );
-        
+
         // Only show the 10 most recent orders to avoid embed limits
         const recentOrders = sortedHistory.slice(0, 10);
-        
+
         recentOrders.forEach((order, index) => {
           const orderDate = new Date(order.generatedAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric'
           });
-          
+
           const expirationDate = new Date(order.expirationDate).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric'
           });
-          
+
           historyEmbed.addFields({ 
             name: `**Order #${index + 1} - ${orderDate}**`, 
             value: `> **Package:** \`${order.package}\`\n> **Order ID:** \`${order.orderId}\`\n> **Key:** \`||${order.key}||\`\n> **Expires:** \`${expirationDate}\`` 
           });
         });
-        
+
         if (sortedHistory.length > 10) {
           historyEmbed.setFooter({ 
             text: `Showing 10 most recent orders out of ${sortedHistory.length} total orders` 
