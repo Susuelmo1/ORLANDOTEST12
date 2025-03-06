@@ -1,0 +1,62 @@
+~/workspace$ git init  # Initialize git if not already initialized
+git add .  # Add all files to the commit
+git commit -m "Added bot files"  # Commit the changes
+git branch -M main  # Make sure you're on the main branch
+git remote add origin https://github.com/Susuelmo1/ORLANDOTEST12.git  # Connect to your GitHub repo
+git push -u origin main  # Push your code to GitHub
+Reinitialized existing Git repository in /home/runner/workspace/.git/
+On branch fix-token
+nothing to commit, working tree clean
+error: remote origin already exists.
+To https://github.com/Susuelmo1/ORLANDOTEST12
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'https://github.com/Susuelmo1/ORLANDOTEST12'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref. If you want to integrate the remote changes, use
+hint: 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+~/workspace$ git checkout main  # Switch to the main branch
+git pull origin main  # Pull the latest changes from GitHub
+Already on 'main'
+remote: Enumerating objects: 17, done.
+remote: Counting objects: 100% (17/17), done.
+remote: Compressing objects: 100% (10/10), done.
+remote: Total 11 (delta 6), reused 6 (delta 1), pack-reused 0 (from 0)
+Unpacking objects: 100% (11/11), 12.88 KiB | 1.84 MiB/s, done.
+From https://github.com/Susuelmo1/ORLANDOTEST12
+ * branch            main       -> FETCH_HEAD
+ + d865766...6a749e1 main       -> origin/main  (forced update)
+hint: You have divergent branches and need to specify how to reconcile them.
+hint: You can do so by running one of the following commands sometime before
+hint: your next pull:
+hint:
+hint:   git config pull.rebase false  # merge
+hint:   git config pull.rebase true   # rebase
+hint:   git config pull.ff only       # fast-forward only
+hint:
+hint: You can replace "git config" with "git config --global" to set a default
+hint: preference for all repositories. You can also pass --rebase, --no-rebase,
+hint: or --ff-only on the command line to override the configured default per
+hint: invocation.
+fatal: Need to specify how to reconcile divergent branches.
+~/workspace$ git push origin main  # Push your local changes to the remote repository
+To https://github.com/Susuelmo1/ORLANDOTEST12
+ ! [rejected]        main -> main (non-fast-forward)
+error: failed to push some refs to 'https://github.com/Susuelmo1/ORLANDOTEST12'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. If you want to integrate the remote changes,
+hint: use 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+~/workspace$ git checkout fix-token  # Switch back to your fix-token branch
+git merge main  # Merge changes from main into fix-token
+git push origin fix-token --force  # Force push your changes if needed
+branch 'fix-token' set up to track 'origin/fix-token'.
+Switched to a new branch 'fix-token'
+Already up to date.
+Everything up-to-date
+~/workspace$ git push -f origin main  # Caution: This will overwrite the remote branch with your local branch
+Total 0 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+To https://github.com/Susuelmo1/ORLANDOTEST12
+ + 6a749e1...c9ba52b main -> main (forced update)
+~/workspace$ 
