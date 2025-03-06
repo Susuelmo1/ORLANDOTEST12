@@ -1,0 +1,53 @@
+git checkout -b fix-token
+
+# Remove the file from history (replace with actual filename and line if necessary)
+git filter-branch --force --index-filter "git rm --cached --ignore-unmatch monitor.js" --prune-empty --tag-name-filter cat -- --all
+
+# Now, clean up the repository
+rm -rf .git/refs/original/
+git reflog expire --expire=now --all
+git gc --prune=now --aggressive
+
+# Push the new history to GitHub (force is necessary)
+git push origin fix-token --force
+Switched to a new branch 'fix-token'
+WARNING: git-filter-branch has a glut of gotchas generating mangled history
+     rewrites.  Hit Ctrl-C before proceeding to abort, then use an
+     alternative filtering tool such as 'git filter-repo'
+     (https://github.com/newren/git-filter-repo/) instead.  See the
+     filter-branch manual page for more details; to squelch this warning,
+     set FILTER_BRANCH_SQUELCH_WARNING=1.
+Proceeding with filter-branch...
+
+Rewrite ca7f49f6d2c018ba5b422953ec17ec977ea1f627 (39/54) (2 seconds passed, remaining 0 predicted)    rm 'monitor.js'
+Rewrite 904c8228357e795af676bd07e98153fca09b75c3 (39/54) (2 seconds passed, remaining 0 predicted)    rm 'monitor.js'
+Rewrite 3856291a909278c5f83c8c9d28a99e3b9e8c2ca9 (39/54) (2 seconds passed, remaining 0 predicted)    rm 'monitor.js'
+Rewrite f335c59ee14ee2cc144666d1177fe28728d3bb15 (39/54) (2 seconds passed, remaining 0 predicted)    rm 'monitor.js'
+Rewrite b4daa29687b73acf707276871806ad43efd3bdf9 (39/54) (2 seconds passed, remaining 0 predicted)    rm 'monitor.js'
+Rewrite a9a0df2b18022e17b4ee71b403ed8c3870c0927e (39/54) (2 seconds passed, remaining 0 predicted)    rm 'monitor.js'
+Rewrite fe07503dbc8b3cba07536172e40a03f3c3744a13 (39/54) (2 seconds passed, remaining 0 predicted)    
+Ref 'refs/heads/fix-token' was rewritten
+Ref 'refs/heads/main' was rewritten
+Ref 'refs/heads/replit-agent' was rewritten
+Ref 'refs/remotes/origin/main' was rewritten
+Ref 'refs/replit/agent-ledger' was rewritten
+Enumerating objects: 275, done.
+Counting objects: 100% (275/275), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (264/264), done.
+Writing objects: 100% (275/275), done.
+Total 275 (delta 196), reused 0 (delta 0), pack-reused 0 (from 0)
+Enumerating objects: 266, done.
+Counting objects: 100% (266/266), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (67/67), done.
+Writing objects: 100% (266/266), 239.97 KiB | 119.98 MiB/s, done.
+Total 266 (delta 189), reused 259 (delta 188), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (189/189), done.
+remote: 
+remote: Create a pull request for 'fix-token' on GitHub by visiting:
+remote:      https://github.com/Susuelmo1/ORLANDOTEST12/pull/new/fix-token
+remote: 
+To https://github.com/Susuelmo1/ORLANDOTEST12
+ * [new branch]      fix-token -> fix-token
+~/workspace$ 
