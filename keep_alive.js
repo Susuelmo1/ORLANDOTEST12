@@ -8,7 +8,7 @@ app.get('/', (req, res) => {
 });
 
 function keepAlive() {
-  const PORT = process.env.PORT || config.keepAlivePort || 8080;
+  const PORT = process.env.PORT || config.keepAlivePort || 8181; // Ensure consistent port
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Web server running on port ${PORT}`);
   });
