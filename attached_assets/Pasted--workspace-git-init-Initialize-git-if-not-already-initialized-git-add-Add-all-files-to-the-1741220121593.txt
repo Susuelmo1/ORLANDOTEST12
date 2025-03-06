@@ -1,0 +1,43 @@
+~/workspace$ git init  # Initialize git if not already initialized
+git add .  # Add all files to the commit
+git commit -m "Added bot files"  # Commit the changes
+git branch -M main  # Make sure you're on the main branch
+git remote add origin https://github.com/Susuelmo1/ORLANDOTEST12.git  # Connect to your GitHub repo
+git push -u origin main  # Push your code to GitHub
+Reinitialized existing Git repository in /home/runner/workspace/.git/
+On branch main
+nothing to commit, working tree clean
+error: remote origin already exists.
+Enumerating objects: 9, done.
+Counting objects: 100% (9/9), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (7/7), done.
+Writing objects: 100% (7/7), 1.86 KiB | 1.86 MiB/s, done.
+Total 7 (delta 4), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (4/4), completed with 2 local objects.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:     
+remote:       —— Discord Bot Token —————————————————————————————————
+remote:        locations:
+remote:          - commit: 904c8228357e795af676bd07e98153fca09b75c3
+remote:            path: monitor.js:10
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/Susuelmo1/ORLANDOTEST12/security/secret-scanning/unblock-secret/2tv5snx8lVYSxHQnmmZ5QDKHxHo
+remote:     
+remote: 
+remote: 
+To https://github.com/Susuelmo1/ORLANDOTEST12
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/Susuelmo1/ORLANDOTEST12'
