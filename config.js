@@ -1,7 +1,6 @@
 
 module.exports = {
   port: process.env.PORT || 3000,
-  keepAlivePort: 8181, // Changed from 8080 to avoid conflicts
   environment: process.env.NODE_ENV || 'development',
   maxRequestSize: '50mb',
   rateLimit: {
