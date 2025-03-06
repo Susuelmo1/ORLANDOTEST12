@@ -353,7 +353,7 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
     }
 
     // First send the server name and ping the user at the top
-    await ticketChannel.send(`**@-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫**\n${user}`);
+    await ticketChannel.send(`**𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫**\n${user}`);
     
     // Then send the welcome message and buttons to the ticket channel
     await ticketChannel.send({ embeds: [welcomeEmbed], components: [ticketButtons] });
