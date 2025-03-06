@@ -23,3 +23,14 @@ externalPort = 3000
 [[ports]]
 localPort = 8080
 externalPort = 80
+
+[workflows]
+runButton = "Start Bot"
+
+[[workflows.workflow]]
+name = "Start Bot"
+author = 19977894
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node index.js"
