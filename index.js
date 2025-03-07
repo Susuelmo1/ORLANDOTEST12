@@ -45,8 +45,54 @@ if (!client.orderProofs) {
 }
 
 // Event listener for when the bot is ready
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
+  
+  // Join voice channel and stay there
+  try {
+    const voiceChannelId = '1347687786039214122';
+    const { joinVoiceChannel, createAudioPlayer, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
+    
+    // Join the voice channel
+    const channel = client.channels.cache.get(voiceChannelId);
+    if (channel) {
+      const connection = joinVoiceChannel({
+        channelId: voiceChannelId,
+        guildId: channel.guild.id,
+        adapterCreator: channel.guild.voiceAdapterCreator,
+        selfDeaf: true,
+        selfMute: true
+      });
+
+      // Handle reconnection if disconnected
+      connection.on(VoiceConnectionStatus.Disconnected, async () => {
+        try {
+          // Try to reconnect immediately
+          await Promise.race([
+            entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+            entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+          ]);
+        } catch (error) {
+          // If we can't reconnect in time, destroy and create a new connection
+          connection.destroy();
+          const newConnection = joinVoiceChannel({
+            channelId: voiceChannelId,
+            guildId: channel.guild.id,
+            adapterCreator: channel.guild.voiceAdapterCreator,
+            selfDeaf: true,
+            selfMute: true
+          });
+        }
+      });
+
+      console.log(`Successfully joined voice channel: ${channel.name}`);
+    } else {
+      console.error(`Voice channel with ID ${voiceChannelId} not found`);
+    }
+  } catch (error) {
+    console.error('Error joining voice channel:', error);
+  }
+  
   registerCommands();
 });
 
@@ -60,14 +106,8 @@ client.on('guildMemberAdd', async (member) => {
       const welcomeChannel = await member.guild.channels.fetch(welcomeChannelId).catch(() => null);
 
       if (welcomeChannel) {
-        // Create welcome embed
-        const welcomeEmbed = new EmbedBuilder()
-          .setTitle('<:purplearrow:1337594384631332885> **WELCOME**')
-          .setDescription(`**Welcome ${member} to .gg/alterlc! 👋**\nPlease check out <#${rulesChannelId}> and <#${global.config.welcome.termsChannelId || '1337495477050146938'}> to begin your journey.`)
-          .setColor(0x9B59B6)
-          .setTimestamp();
-
-        await welcomeChannel.send({ embeds: [welcomeEmbed] });
+        // Send plain text welcome message
+        await welcomeChannel.send(`Welcome ${member} to .gg/alterlc! 👋 Please check out <#${rulesChannelId}> and <#${global.config.welcome.termsChannelId || '1337495477050146938'}> to begin your journey.`);
 
         // Send a DM to the new member with more information
         try {
