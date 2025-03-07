@@ -19,7 +19,7 @@ module.exports = {
 
       // Create a server activated embed with a purple line design
       const serverActivatedEmbed = new EmbedBuilder()
-        .setTitle('🚀 Server Activated')
+        .setTitle('<:purplearrow:1337594384631332885> **SERVER ACTIVATED**')
         .setDescription('Your server has been successfully activated!')
         .addFields(
           { name: 'Status', value: '✅ Active', inline: true },
