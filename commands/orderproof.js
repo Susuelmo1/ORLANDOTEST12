@@ -196,7 +196,7 @@ module.exports = {
         const webhook = new WebhookClient({ url: webhookUrl });
 
         const logEmbed = new EmbedBuilder()
-          .setTitle('New Order Proof Submitted')
+          .setTitle('<:alting:1336938112261029978> **ORDER PROOF SUBMITTED**')
           .setDescription(`Order proof submitted by ${interaction.user.tag}`)
           .addFields(
             { name: 'User', value: `<@${interaction.user.id}>`, inline: true },

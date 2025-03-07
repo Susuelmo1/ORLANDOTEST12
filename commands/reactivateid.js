@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { sendWebhook } = require('../utils/webhook');
 
@@ -38,7 +37,7 @@ module.exports = {
 
       // Get the order data
       const orderData = global.activeOrders.get(orderId);
-      
+
       // Get the target user
       const targetUser = await client.users.fetch(orderData.userId).catch(() => null);
       if (!targetUser) {
@@ -47,7 +46,7 @@ module.exports = {
 
       // Get the member if in the server
       const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
-      
+
       // Roblox account credentials
       const robloxAccount = {
         username: 'susuelmo1',
@@ -62,7 +61,7 @@ module.exports = {
 
       // Initiate auto-joining for ERLC with Roblox accounts
       const autoJoinEmbed = new EmbedBuilder()
-        .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **ORDER REACTIVATION INITIATED**')
+        .setTitle('<:purplearrow:1337594384631332885> **ORDER REACTIVATION INITIATED**')
         .setDescription(`***${orderData.accountsCount} Roblox accounts are being dispatched to ERLC server...***`)
         .addFields(
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
@@ -71,7 +70,7 @@ module.exports = {
         )
         .setColor(0x9B59B6)
         .setTimestamp();
-      
+
       await interaction.channel.send({ embeds: [autoJoinEmbed] });
 
       // Simulate Roblox accounts joining with improved messages
@@ -79,20 +78,20 @@ module.exports = {
         // Step 1: Connecting message
         setTimeout(async () => {
           const connectingEmbed = new EmbedBuilder()
-            .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **CONNECTING TO ROBLOX**')
+            .setTitle('<:purplearrow:1337594384631332885> **CONNECTING TO ROBLOX**')
             .setDescription(`***Logging into Roblox account ${robloxAccount.username}...***`)
             .addFields(
               { name: '**Status**', value: '🔄 **Authenticating...**', inline: true }
             )
             .setColor(0x9B59B6)
             .setTimestamp();
-          
+
           await interaction.channel.send({ embeds: [connectingEmbed] });
 
           // Step 2: Loading server message
           setTimeout(async () => {
             const loadingEmbed = new EmbedBuilder()
-              .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **LOADING ERLC SERVER**')
+              .setTitle('<:purplearrow:1337594384631332885> **LOADING ERLC SERVER**')
               .setDescription(`***Connecting Roblox account to ERLC server with code: ${serverCode}...***`)
               .addFields(
                 { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
@@ -101,13 +100,13 @@ module.exports = {
               )
               .setColor(0x9B59B6)
               .setTimestamp();
-            
+
             await interaction.channel.send({ embeds: [loadingEmbed] });
 
             // Step 3: Final connection message
             setTimeout(async () => {
               const joinCompleteEmbed = new EmbedBuilder()
-                .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **ACCOUNTS CONNECTED**')
+                .setTitle('<:purplearrow:1337594384631332885> **ACCOUNTS CONNECTED**')
                 .setDescription(`***Successfully connected ${orderData.accountsCount} Roblox accounts to ERLC server***`)
                 .addFields(
                   { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
@@ -117,7 +116,7 @@ module.exports = {
                 )
                 .setColor(0x9B59B6)
                 .setTimestamp();
-              
+
               await interaction.channel.send({ embeds: [joinCompleteEmbed] });
               resolve();
             }, 2000);
@@ -132,7 +131,7 @@ module.exports = {
       function generateAccountInfo(count, baseUsername) {
         let accountText = '';
         accountText += `Main Account: \`${baseUsername}\`\n`;
-        
+
         if (count > 1) {
           accountText += `Additional Accounts:\n`;
           for (let i = 2; i <= count; i++) {
@@ -140,18 +139,18 @@ module.exports = {
               accountText += `\`${baseUsername}${i}\`\n`;
             }
           }
-          
+
           if (count > 5) {
             accountText += `*and ${count - 5} more accounts...*\n`;
           }
         }
-        
+
         return `\`\`\`\n${accountText}\`\`\``;
       }
 
       // Create success embed for confirmation
       const successEmbed = new EmbedBuilder()
-        .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **ORDER REACTIVATED**')
+        .setTitle('<:purplearrow:1337594384631332885> **ORDER REACTIVATED**')
         .setDescription(`***Order has been successfully reactivated for ${targetUser}***`)
         .addFields(
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
@@ -203,7 +202,7 @@ module.exports = {
       // Update user order history if it exists
       if (global.userOrderHistory && global.userOrderHistory.has(targetUser.id)) {
         const userHistory = global.userOrderHistory.get(targetUser.id);
-        
+
         // Find the matching order in history
         const orderIndex = userHistory.findIndex(order => order.orderId === orderId);
         if (orderIndex !== -1) {
@@ -221,7 +220,7 @@ module.exports = {
         const orderWebhook = new WebhookClient({ url: orderWebhookUrl });
 
         const orderNotificationEmbed = new EmbedBuilder()
-          .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **ORDER REACTIVATED**')
+          .setTitle('<:purplearrow:1337594384631332885> **ORDER REACTIVATED**')
           .setDescription(`***An existing order has been reactivated***`)
           .addFields(
             { name: '**Customer**', value: `${targetUser} (${targetUser.tag})`, inline: false },

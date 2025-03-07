@@ -84,7 +84,7 @@ module.exports = {
           const webhook = new WebhookClient({ url: process.env.LOG_WEBHOOK_URL });
 
           const logEmbed = new EmbedBuilder()
-            .setTitle('Role Assigned')
+            .setTitle('<:alting:1336938112261029978> **ROLE UPDATED**')
             .setDescription(`A role has been assigned to a user`)
             .addFields(
               { name: 'User', value: `${user.tag} (${user.id})`, inline: true },

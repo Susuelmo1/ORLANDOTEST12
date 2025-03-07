@@ -80,7 +80,7 @@ module.exports = {
         const webhook = new WebhookClient({ url: webhookUrl });
 
         const logEmbed = new EmbedBuilder()
-          .setTitle('Order ID Lookup')
+          .setTitle('<:alting:1336938112261029978> **NEW ORDER ID**')
           .setDescription(`Order ID \`${orderId}\` was looked up by ${interaction.user.tag}`)
           .addFields(
             { name: 'Staff Member', value: `<@${interaction.user.id}>`, inline: true },

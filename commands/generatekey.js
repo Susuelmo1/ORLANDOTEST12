@@ -61,27 +61,29 @@ module.exports = {
       if (!client.orderProofs) {
         client.orderProofs = new Map();
       }
-      
-      // Check if order ID exists (case-insensitive matching)
-      let orderFound = false;
-      let correctOrderId = '';
-      
-      if (client.orderProofs) {
-        for (const [key, value] of client.orderProofs.entries()) {
-          if (key.toUpperCase() === orderId.toUpperCase()) {
-            orderFound = true;
-            correctOrderId = key;
-            break;
-          }
+
+      // Standardize order ID case to make case-insensitive comparisons
+      const standardizedOrderId = orderId.toUpperCase().trim();
+
+      // Check if order ID exists - search case-insensitively
+      let foundOrder = false;
+      let actualOrderId = null;
+
+      for (const [key, value] of client.orderProofs.entries()) {
+        if (key.toUpperCase().trim() === standardizedOrderId) {
+          foundOrder = true;
+          actualOrderId = key;
+          break;
         }
       }
-      
-      if (!orderFound) {
-        return interaction.editReply(`❌ Order ID \`${orderId}\` not found! Make sure the user has submitted order proof first.`);
+
+      if (!foundOrder) {
+        return interaction.editReply(`❌ Order ID \`${orderId}\` not found! Make sure the user has entered the correct ID and has submitted order proof first.`);
       }
-      
-      // Use the correct case for further processing
-      orderId = correctOrderId;
+
+      // Use the actual order ID with correct casing for subsequent operations
+      const orderDetails = client.orderProofs.get(actualOrderId);
+
 
       // Define expiration period based on package
       let expirationDays = 1; // Default to 1 day
@@ -261,7 +263,7 @@ module.exports = {
         const webhook = new WebhookClient({ url: webhookUrl });
 
         // Get order details for more comprehensive logging
-        const orderDetails = client.orderProofs.get(orderId);
+
         const robloxUsername = orderDetails ? orderDetails.robloxUsername : 'Unknown';
 
         const logEmbed = new EmbedBuilder()

@@ -51,20 +51,20 @@ module.exports = {
       // Validate key if global.generatedKeys exists
       let keyInfo = null;
       let orderId = null;
-      
+
       if (global.generatedKeys && global.generatedKeys.has(key)) {
         keyInfo = global.generatedKeys.get(key);
-        
+
         // Check if key matches the user
         if (keyInfo.userId !== targetUser.id) {
           return interaction.editReply(`❌ This key doesn't belong to ${targetUser}!`);
         }
-        
+
         // Check if key was already used
         if (keyInfo.used) {
           return interaction.editReply(`❌ This key has already been used! If this is a mistake, please contact an administrator.`);
         }
-        
+
         // Mark key as used
         keyInfo.used = true;
         global.generatedKeys.set(key, keyInfo);
@@ -77,7 +77,7 @@ module.exports = {
       // Role assignment step
       const roleIdToAssign = process.env.ACTIVE_ROLE_ID || '1346626908935385139'; // Customer role ID
       let roleAssigned = false;
-      
+
       if (roleIdToAssign) {
         try {
           // Make sure the bot has permission to manage roles
@@ -86,7 +86,7 @@ module.exports = {
           } else {
             // Get the role object
             const roleToAssign = await interaction.guild.roles.fetch(roleIdToAssign).catch(() => null);
-            
+
             if (!roleToAssign) {
               console.error(`Could not find role with ID ${roleIdToAssign}`);
             } else {
@@ -158,7 +158,7 @@ module.exports = {
         )
         .setColor(0x9B59B6)
         .setTimestamp();
-      
+
       await interaction.channel.send({ embeds: [autoJoinEmbed] });
 
       // Simulate Roblox accounts joining with improved messages
@@ -173,7 +173,7 @@ module.exports = {
             )
             .setColor(0x9B59B6)
             .setTimestamp();
-          
+
           await interaction.channel.send({ embeds: [connectingEmbed] });
 
           // Step 2: Loading server message
@@ -188,7 +188,7 @@ module.exports = {
               )
               .setColor(0x9B59B6)
               .setTimestamp();
-            
+
             await interaction.channel.send({ embeds: [loadingEmbed] });
 
             // Step 3: Final connection message
@@ -204,7 +204,7 @@ module.exports = {
                 )
                 .setColor(0x9B59B6)
                 .setTimestamp();
-              
+
               await interaction.channel.send({ embeds: [joinCompleteEmbed] });
               resolve();
             }, 2000);
@@ -219,7 +219,7 @@ module.exports = {
       function generateAccountInfo(count, baseUsername) {
         let accountText = '';
         accountText += `Main Account: \`${baseUsername}\`\n`;
-        
+
         if (count > 1) {
           accountText += `Additional Accounts:\n`;
           for (let i = 2; i <= count; i++) {
@@ -227,12 +227,12 @@ module.exports = {
               accountText += `\`${baseUsername}${i}\`\n`;
             }
           }
-          
+
           if (count > 5) {
             accountText += `*and ${count - 5} more accounts...*\n`;
           }
         }
-        
+
         return `\`\`\`\n${accountText}\`\`\``;
       }
 
@@ -250,7 +250,7 @@ module.exports = {
         .setColor(0x9B59B6)
         .setTimestamp()
         .setFooter({ text: 'ERLC Alting Support' });
-      
+
       // Add role assignment status
       if (!roleAssigned) {
         successEmbed.addFields({ 
@@ -301,34 +301,34 @@ module.exports = {
         )
         .setColor(0x9B59B6)
         .setTimestamp();
-      
+
       const statusMessage = await interaction.channel.send({ embeds: [statusEmbed] });
 
       // Attempt to login to Roblox with the specified account(s)
       try {
         const puppeteer = require('puppeteer');
-        
+
         // Launch browser in headless mode
         const browser = await puppeteer.launch({
           args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
-        
+
         // Default credentials
         const robloxCredentials = {
           username: 'susuelmo1',
           password: 'Dekadeka12!'
         };
-        
+
         // Create a new page
         const page = await browser.newPage();
-        
+
         // Navigate to Roblox login page
         await page.goto('https://www.roblox.com/login', { waitUntil: 'networkidle2' });
-        
+
         // Fill in the login form
         await page.type('#login-username', robloxCredentials.username);
         await page.type('#login-password', robloxCredentials.password);
-        
+
         // Click the login button
         await Promise.all([
           page.waitForNavigation({ waitUntil: 'networkidle2' }),
@@ -336,12 +336,12 @@ module.exports = {
         ]).catch(e => {
           console.log('Login navigation error:', e);
         });
-        
+
         // Check if login was successful
         const isLoggedIn = await page.evaluate(() => {
           return !document.querySelector('#login-button');
         });
-        
+
         if (isLoggedIn) {
           // Update status as connected
           const connectedEmbed = new EmbedBuilder()
@@ -353,9 +353,9 @@ module.exports = {
             )
             .setColor(0x9B59B6)
             .setTimestamp();
-          
+
           await statusMessage.edit({ embeds: [connectedEmbed] });
-          
+
           // Log the successful connection
           await logOrder({
             title: 'ROBLOX ACCOUNTS CONNECTED',
@@ -377,9 +377,9 @@ module.exports = {
             )
             .setColor(0xED4245) // Red color for failure
             .setTimestamp();
-          
+
           await statusMessage.edit({ embeds: [failedEmbed] });
-          
+
           // Log the failed connection
           await logOrder({
             title: 'CONNECTION FAILED',
@@ -391,12 +391,12 @@ module.exports = {
             color: 0xED4245 // Red color for failure
           });
         }
-        
+
         // Close the browser
         await browser.close();
       } catch (browserError) {
         console.error('Error with browser automation:', browserError);
-        
+
         // Update status as failed
         const errorEmbed = new EmbedBuilder()
           .setTitle('<:purplearrow:1337594384631332885> **CONNECTION ERROR**')
@@ -408,7 +408,7 @@ module.exports = {
           )
           .setColor(0xED4245) // Red color for error
           .setTimestamp();
-        
+
         await statusMessage.edit({ embeds: [errorEmbed] });
       }
 
