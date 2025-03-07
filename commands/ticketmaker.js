@@ -1,3 +1,4 @@
+
 const { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 
 module.exports = {
@@ -40,10 +41,15 @@ module.exports = {
           { 
             name: '**<:PurpleLine:1336946927282950165> __VIP__**',
             value: '> **Lifetime:** [Copy Me](https://www.roblox.com/catalog/98202400395342)\n> **Month:** [Copy Me](https://www.roblox.com/catalog/85144990668024)\n> **Week:** [Copy Me](https://www.roblox.com/catalog/87544796577389)'
+          },
+          { 
+            name: '**<:PurpleLine:1336946927282950165> __Rules and Terms of Service__**',
+            value: `> Please read our [Rules](https://discord.com/channels/${interaction.guild.id}/1337591756161683466) and [Terms of Service](https://discord.com/channels/${interaction.guild.id}/1337495477050146938) before creating a ticket.`
           }
         )
         .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
         .setFooter({ text: '⚠️ Warning: You can only create 10 ticket(s) at a time!' })
+        .setThumbnail('https://media.discordapp.net/attachments/1336783170422571008/1336938605578289234/Screenshot_2025-02-05_at_10.08.18_PM-removebg-preview.png')
         .setColor(0x9B59B6); // Dark purple color
 
       // Create proper Discord.js components

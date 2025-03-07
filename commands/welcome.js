@@ -31,7 +31,8 @@ module.exports = {
       global.config.welcome = {
         enabled: enabled,
         channelId: '1337553581250838639',
-        rulesChannelId: '1337591756161683466'
+        rulesChannelId: '1337591756161683466',
+        termsChannelId: '1337495477050146938'
       };
 
       // Confirm settings
@@ -41,7 +42,8 @@ module.exports = {
         .addFields(
           { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
           { name: 'Welcome Channel', value: `<#1337553581250838639>`, inline: true },
-          { name: 'Rules Channel', value: `<#1337591756161683466>`, inline: true }
+          { name: 'Rules Channel', value: `<#1337591756161683466>`, inline: true },
+          { name: 'Terms Channel', value: `<#1337495477050146938>`, inline: true }
         )
         .setColor(0x9B59B6)
         .setTimestamp();

@@ -63,10 +63,7 @@ client.on('guildMemberAdd', async (member) => {
         // Create welcome embed
         const welcomeEmbed = new EmbedBuilder()
           .setTitle('<:purplearrow:1337594384631332885> **WELCOME**')
-          .setDescription(`**Welcome to ${member.guild.name}, ${member}! We hope you enjoy your stay!**\nWe are now at **${member.guild.memberCount}** members.`)
-          .addFields(
-            { name: '**📋 Regulations**', value: `Make sure to read our rules in <#${rulesChannelId}> to avoid any issues.` }
-          )
+          .setDescription(`**Welcome ${member} to .gg/alterlc! 👋**\nPlease check out <#${rulesChannelId}> and <#${global.config.welcome.termsChannelId || '1337495477050146938'}> to begin your journey.`)
           .setColor(0x9B59B6)
           .setTimestamp();
 
@@ -176,7 +173,8 @@ if (!global.config) {
     welcome: {
       enabled: true,
       channelId: '1337553581250838639',
-      rulesChannelId: '1337591756161683466'
+      rulesChannelId: '1337591756161683466',
+      termsChannelId: '1337495477050146938'
     }
   };
 }
