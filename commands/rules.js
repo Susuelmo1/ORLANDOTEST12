@@ -51,10 +51,6 @@ module.exports = {
           { 
             name: '**<:PurpleLine:1336946927282950165> Penalties**',
             value: '**3 Warnings:** Softban/Kick | **6 Warnings:** Temp Ban (6-12 Days) | **8 Warnings:** Permanent Ban'
-          },
-          { 
-            name: '**<:PurpleLine:1336946927282950165> Discord Markdown**',
-            value: '```\nText Formatting\nItalics: *italics* or _italics_    Underline italics: __*underline italics*__\nBold: **bold**                    Underline bold: __**underline bold**__\nBold Italics: ***bold italics***  Underline bold italics: __***underline bold italics***__\nUnderline: __underline__          Strikethrough: ~~Strikethrough~~\n```'
           }
         )
         .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
