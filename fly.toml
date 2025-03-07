@@ -1,0 +1,22 @@
+# fly.toml app configuration file generated for workspace-floral-grass-9412 on 2025-03-07T20:35:27Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'workspace-floral-grass-9412'
+primary_region = 'iad'
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

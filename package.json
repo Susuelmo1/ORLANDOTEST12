@@ -34,6 +34,7 @@
     "puppeteer": "^19.7.2"
   },
   "devDependencies": {
+    "@flydotio/dockerfile": "^0.7.8",
     "nodemon": "^3.1.0"
   }
 }
