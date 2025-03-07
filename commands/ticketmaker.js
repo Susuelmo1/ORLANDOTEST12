@@ -15,7 +15,7 @@ module.exports = {
       const channel = interaction.channel;
 
       const embed = new EmbedBuilder()
-        .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **CHOOSE YOUR TICKET TYPE**')
+        .setTitle('<:purplearrow:1337594384631332885> **CHOOSE YOUR TICKET TYPE**')
         .setDescription('***Click one of the buttons below to create a ticket!***')
         .addFields(
           { 
