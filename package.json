@@ -8,8 +8,7 @@
     "dev": "nodemon index.js",
     "update": "npm update",
     "audit": "npm audit fix",
-    "prune": "npm prune --production",
-    "postinstall": "npm install"
+    "prune": "npm prune --production"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -31,7 +30,7 @@
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
-    "puppeteer": "^19.7.2"
+    "puppeteer": "^24.4.0"
   },
   "devDependencies": {
     "@flydotio/dockerfile": "^0.7.8",
