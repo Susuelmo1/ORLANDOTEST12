@@ -20,7 +20,7 @@ module.exports = {
 
       // Create a staff guide embed
       const staffGuideEmbed = new EmbedBuilder()
-        .setTitle('@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **STAFF COMMAND GUIDE**')
+        .setTitle('<:purplearrow:1337594384631332885> **STAFF COMMAND GUIDE**')
         .setDescription('***This guide contains information about all staff commands and their usage.***')
         .setColor(0x9B59B6)
         .setTimestamp();

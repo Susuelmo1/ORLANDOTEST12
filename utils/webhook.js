@@ -83,7 +83,7 @@ async function logToWebhook(options) {
   try {
     // Create a new embed with our consistent branding
     const embed = new EmbedBuilder()
-      .setTitle(options.title ? `**@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫**\n<:purplearrow:1337594384631332885> **${options.title}**` : '**@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫**\n<:purplearrow:1337594384631332885> **LOG EVENT**')
+      .setTitle(options.title ? `<:purplearrow:1337594384631332885> **${options.title}**` : '<:purplearrow:1337594384631332885> **LOG EVENT**')
       .setDescription(options.description ? `***${options.description}***` : '')
       .setColor(options.color || 0x9B59B6)
       .setTimestamp()
@@ -224,7 +224,7 @@ async function logOrder(orderData) {
 
     // Create the embed from the provided data
     const embed = new EmbedBuilder()
-      .setTitle(`@.lock$ @-𝐒𝐞𝐫𝐯𝐞𝐫 𝐀𝐥𝐭𝐞𝐫\n<:purplearrow:1337594384631332885> **${orderData.title}**`)
+      .setTitle(`<:purplearrow:1337594384631332885> **${orderData.title}**`)
       .setDescription(orderData.description)
       .setColor(orderData.color || 0x9B59B6) // Use provided color or default to purple
       .setTimestamp();
