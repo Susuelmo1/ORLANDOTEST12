@@ -37,8 +37,8 @@ FROM base
 # Copy built application
 COPY --from=build /app /app
 
-# No need to expose a port since the bot doesn't use HTTP
-# EXPOSE 3000  <-- Remove this if not serving HTTP traffic
+# Expose port 3000 for the Express server
+EXPOSE 3000
 
 # Use a simpler CMD to start your bot directly
 CMD [ "node", "index.js" ]

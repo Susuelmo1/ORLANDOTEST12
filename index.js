@@ -1116,10 +1116,16 @@ client.on('interactionCreate', async interaction => {
 const express = require('express');
 const app = express();
 
+// Add some basic routes
 app.get('/', (req, res) => {
-  res.send('Bot is online!');
+  res.send('Discord Bot is online!');
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).send('Healthy');
+});
+
+// Start Express server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on http://0.0.0.0:${PORT}`);
