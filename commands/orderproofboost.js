@@ -31,10 +31,16 @@ module.exports = {
         return interaction.editReply('❌ Please provide proof of payment!');
       }
 
-      // Check if the file is an image
-      const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validImageTypes.includes(proofAttachment.contentType)) {
-        return interaction.editReply('❌ Please upload a valid image file as proof (JPEG, PNG, GIF, or WEBP)!');
+      // Accept any image file without strict content-type checking
+      // Many image uploads might have different or inconsistent content types
+      if (!proofAttachment.contentType || !proofAttachment.contentType.startsWith('image/')) {
+        // Do a fallback check on file extension
+        const fileExtension = proofAttachment.name.split('.').pop().toLowerCase();
+        const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        
+        if (!validExtensions.includes(fileExtension)) {
+          return interaction.editReply('❌ Please upload a valid image file as proof (JPEG, PNG, GIF, or WEBP)!');
+        }
       }
 
       // Get boost package details

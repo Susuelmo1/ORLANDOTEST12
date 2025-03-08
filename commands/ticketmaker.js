@@ -31,7 +31,7 @@ module.exports = {
             value: '> Create this ticket if you would like to order VIP services.'
           },
           { 
-            name: '**<:4_:1337595042818891909> Discord Boost**',
+            name: '**<:4_:1337595034509250582> Discord Boost**',
             value: '> Create this ticket if you would like to purchase Discord Boosts.'
           },
           { 
