@@ -1,4 +1,3 @@
-
 require('dotenv').config();
 const { Client, Collection, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType } = require('discord.js');
 const fs = require('fs');
@@ -719,7 +718,7 @@ client.on('interactionCreate', async interaction => {
           await interaction.editReply('❌ There was an error creating your ticket! Please try again from the server.');
         }
       }
-      }
+    }
 
       // Close ticket button
       else if (interaction.customId === 'close_ticket') {
@@ -1058,19 +1057,19 @@ client.on('interactionCreate', async interaction => {
           } catch (webhookError) {
             console.error('Error sending webhook:', webhookError);
           }
-          
+
           // Send notification to order list channel
           try {
             const orderListChannelId = '1347749924611293184';
             const orderListChannel = client.channels.cache.get(orderListChannelId);
-            
+
             if (orderListChannel) {
               // Try to extract the username from the channel name
               let username = 'unknown';
               if (channel.name.includes('-')) {
                 username = channel.name.split('-')[1];
               }
-              
+
               // Find the ticket creator if available
               let ticketCreator = 'Unknown User';
               if (global.activeTickets && global.activeTickets.has(channel.id)) {
@@ -1079,7 +1078,7 @@ client.on('interactionCreate', async interaction => {
                   ticketCreator = `<@${ticketData.userId}>`;
                 }
               }
-              
+
               const orderListEmbed = new EmbedBuilder()
                 .setTitle('<:alting:1336938112261029978> **TICKET CLAIMED**')
                 .setDescription(`Ticket ${channel.name} has been claimed by ${interaction.user}`)
@@ -1091,7 +1090,7 @@ client.on('interactionCreate', async interaction => {
                 )
                 .setColor(0x9B59B6)
                 .setTimestamp();
-                
+
               await orderListChannel.send({ content: `${interaction.user}`, embeds: [orderListEmbed] });
             }
           } catch (channelError) {
