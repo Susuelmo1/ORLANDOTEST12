@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for workspace-floral-grass-9412 on 2025-03-07T20:35:27Z
+# fly.toml app configuration file generated for workspace-fragrant-star-6735 on 2025-03-08T02:20:13Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'workspace-floral-grass-9412'
+app = 'workspace-fragrant-star-6735'
 primary_region = 'iad'
 
 [build]

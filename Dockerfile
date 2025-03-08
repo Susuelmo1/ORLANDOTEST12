@@ -12,11 +12,10 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV="production"
 
-
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build node modules
+# Install packages needed to build node modules (only if you have build dependencies)
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
 
@@ -27,19 +26,19 @@ RUN npm ci
 # Copy application code
 COPY . .
 
-
 # Final stage for app image
 FROM base
 
-# Install packages needed for deployment
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y chromium chromium-sandbox && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+# If using Puppeteer or other chromium dependencies, uncomment the lines below
+# RUN apt-get update -qq && \
+#     apt-get install --no-install-recommends -y chromium chromium-sandbox && \
+#     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Copy built application
 COPY --from=build /app /app
 
-# Start the server by default, this can be overwritten at runtime
-EXPOSE 3000
-ENV PUPPETEER_EXECUTABLE_PATH="/usr/bin/chromium"
-CMD [ "npm", "run", "start" ]
+# No need to expose a port since the bot doesn't use HTTP
+# EXPOSE 3000  <-- Remove this if not serving HTTP traffic
+
+# Use a simpler CMD to start your bot directly
+CMD [ "node", "index.js" ]
