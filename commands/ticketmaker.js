@@ -89,7 +89,7 @@ module.exports = {
                 label: 'Discord Boost',
                 description: 'Create a ticket to purchase Discord Boosts',
                 value: 'create_ticket_boost',
-                emoji: '4️⃣'
+                emoji: '🚀'
               }
             ])
         );
