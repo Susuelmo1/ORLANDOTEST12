@@ -717,7 +717,8 @@ client.on('interactionCreate', async interaction => {
         } catch (error) {
           console.error('Error creating ticket from DM confirmation:', error);
           await interaction.editReply('❌ There was an error creating your ticket! Please try again from the server.');
-        }}
+        }
+      }
       }
 
       // Close ticket button
