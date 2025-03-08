@@ -223,18 +223,18 @@ module.exports = {
           'NinjaWarrior', 'PlatformRunner', 'SpeedDemon', 'CoolUser', 'ProGamerX',
           'RobloxNinja', 'VirtualHero', 'GameAddict', 'BlockRunner', 'WorldExplorer'
         ];
-        
+
         const suffixes = ['Pro', 'Master', 'King', 'Queen', 'Boss', 'Legend', 'Hero', 'Ninja', 'Wizard', 'Champion'];
         const random4Digits = () => Math.floor(1000 + Math.random() * 9000);
-        
+
         const generateName = () => {
           const randomName = namePool[Math.floor(Math.random() * namePool.length)];
           const randomSuffix = Math.random() > 0.5 ? suffixes[Math.floor(Math.random() * suffixes.length)] : '';
           const addDigits = Math.random() > 0.3;
-          
+
           return `${randomName}${randomSuffix}${addDigits ? random4Digits() : ''}`;
         };
-        
+
         let accountText = '';
         const mainAccount = generateName();
         accountText += `Main Account: \`${mainAccount}\`\n`;
