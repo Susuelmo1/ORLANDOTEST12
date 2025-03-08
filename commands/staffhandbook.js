@@ -62,7 +62,7 @@ module.exports = {
         },
         {
           name: '**🚀 `/orderstart`**',
-          value: '> Starts service for a customer (assigns Customer role automatically)\n> **Usage:** `/orderstart user:@user accounts:15 key:ABC123 server_code:erlccode`\n> **Permissions:** Staff Only'
+          value: '> Starts service for a customer (assigns Customer role automatically)\n> **Usage:** `/orderstart user:@user accounts:15 key:ABC123 server_code:erlccode`\n> **Note:** Automatically assigns the Alting Customer role\n> **Permissions:** Staff Only'
         },
         {
           name: '**🔄 `/reactivateid`**',
@@ -114,7 +114,11 @@ module.exports = {
       handbookEmbed.addFields(
         {
           name: '**__📌 IMPORTANT STAFF PROTOCOLS__**',
-          value: '```\n1. Always verify order proof before generating keys\n2. Ensure correct order information before starting service\n3. Keep customer information strictly confidential\n4. Report any suspicious activity to owners immediately\n5. Update the order status in tickets when appropriate\n6. Never share your staff account or credentials\n7. Always use /role to assign roles properly\n```'
+          value: '```\n1. Always verify order proof before generating keys\n2. Ensure correct order information before starting service\n3. Keep customer information strictly confidential\n4. Report any suspicious activity to owners immediately\n5. Update the order status in tickets when appropriate\n6. Never share your staff account or credentials\n7. Always use /role to assign roles properly\n8. Monitor the order list channel for ticket activity notifications\n```'
+        },
+        {
+          name: '**__📢 ORDER LIST CHANNEL__**',
+          value: '```\nThe order list channel (#order-list) tracks all ticket activities:\n• When tickets are claimed\n• When order proofs are submitted\n• When keys are generated\n• When orders start and end\n\nYou will be pinged in this channel when actions are taken.\n```'
         },
         {
           name: '**__⚠️ TROUBLESHOOTING__**',

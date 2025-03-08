@@ -261,22 +261,6 @@ module.exports = {
       }
 
       // Send logs to the dedicated webhook
-      const webhookEmbed = new EmbedBuilder()
-        .setTitle('<:purplearrow:1337594384631332885> **NEW ORDER STARTED**')
-        .setDescription(`***Order has been started for ${targetUser}***`)
-        .addFields(
-          { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
-          { name: '**Roblox Accounts**', value: `\`${accountsCount}\``, inline: true },
-          { name: '**Staff Member**', value: `<@${interaction.user.id}>`, inline: true },
-          { name: '**Start Time**', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
-          { name: '**Server Code**', value: `\`${serverCode}\``, inline: true },
-          { name: '**Key**', value: `\`${key}\``, inline: false }
-        )
-        .setColor(0x9B59B6)
-        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
-        .setTimestamp();
-
-      // Send to webhook
       const { logOrder } = require('../utils/webhook');
       await logOrder({
         title: 'NEW ORDER STARTED',
@@ -290,12 +274,12 @@ module.exports = {
           // Key removed as requested
         ]
       });
-      
+
       // Send notification to the orders channel
       try {
         const ordersChannelId = '1346648156053442643';
         const ordersChannel = client.channels.cache.get(ordersChannelId);
-        
+
         if (ordersChannel) {
           const orderEmbed = new EmbedBuilder()
             .setTitle('<:purplearrow:1337594384631332885> **NEW ORDER STARTED**')
@@ -306,15 +290,40 @@ module.exports = {
               { name: '**Staff Member**', value: `<@${interaction.user.id}>`, inline: true },
               { name: '**Start Time**', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
               { name: '**Server Code**', value: `\`${serverCode}\``, inline: true }
-              // Key removed as requested
             )
             .setColor(0x9B59B6)
             .setTimestamp();
-            
+
           await ordersChannel.send({ embeds: [orderEmbed] });
         }
       } catch (channelError) {
         console.error('Error sending to orders channel:', channelError);
+      }
+
+      // Send notification to the order list channel
+      try {
+        const orderListChannelId = '1347749924611293184';
+        const orderListChannel = client.channels.cache.get(orderListChannelId);
+
+        if (orderListChannel) {
+          const orderListEmbed = new EmbedBuilder()
+            .setTitle('<:alting:1336938112261029978> **NEW ORDER STARTED**')
+            .setDescription(`Order has been started by ${interaction.user}`)
+            .addFields(
+              { name: 'Customer', value: `${targetUser}`, inline: true },
+              { name: 'Order ID', value: `\`${orderId}\``, inline: true },
+              { name: 'Roblox Accounts', value: `\`${accountsCount}\``, inline: true },
+              { name: 'Staff Member', value: `${interaction.user}`, inline: true },
+              { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: true },
+              { name: 'Status', value: '✅ **Active**', inline: true }
+            )
+            .setColor(0x9B59B6)
+            .setTimestamp();
+
+          await orderListChannel.send({ content: `${interaction.user}`, embeds: [orderListEmbed] });
+        }
+      } catch (channelError) {
+        console.error('Error sending to order list channel:', channelError);
       }
 
       // Send a status update about connecting bots

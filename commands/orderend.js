@@ -110,6 +110,32 @@ module.exports = {
       } catch (channelError) {
         console.error('Error sending to order ends channel:', channelError);
       }
+      
+      // Send to order list channel
+      try {
+        const orderListChannelId = '1347749924611293184';
+        const orderListChannel = client.channels.cache.get(orderListChannelId);
+        
+        if (orderListChannel) {
+          const orderListEmbed = new EmbedBuilder()
+            .setTitle('<:alting:1336938112261029978> **ORDER ENDED**')
+            .setDescription(`Order ${orderId} has been ended by ${interaction.user}`)
+            .addFields(
+              { name: 'Customer', value: `${user}`, inline: true },
+              { name: 'Order ID', value: `\`${orderId}\``, inline: true },
+              { name: 'Duration', value: `<t:${Math.floor(orderData.startTime.getTime() / 1000)}:R>`, inline: true },
+              { name: 'Staff Member', value: `${interaction.user}`, inline: true },
+              { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: true },
+              { name: 'Reason', value: reason, inline: false }
+            )
+            .setColor(0xED4245) // Red color for ended orders
+            .setTimestamp();
+            
+          await orderListChannel.send({ content: `${interaction.user}`, embeds: [orderListEmbed] });
+        }
+      } catch (channelError) {
+        console.error('Error sending to order list channel:', channelError);
+      }
 
       // Log to webhook
       try {

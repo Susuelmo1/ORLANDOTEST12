@@ -248,6 +248,33 @@ module.exports = {
         console.error('Error sending webhook:', webhookError);
       }
 
+      // Send notification to order list channel
+      try {
+        const orderListChannelId = '1347749924611293184';
+        const orderListChannel = client.channels.cache.get(orderListChannelId);
+        if (orderListChannel) {
+          const orderListEmbed = new EmbedBuilder()
+            .setTitle('<:alting:1336938112261029978> **ORDER PROOF SUBMITTED**')
+            .setDescription(`Order proof submitted by ${interaction.user.tag}`)
+            .addFields(
+              { name: 'User', value: `<@${interaction.user.id}>`, inline: true },
+              { name: 'Roblox Username', value: robloxUsername, inline: true },
+              { name: 'Package', value: packageName, inline: true },
+              { name: 'Duration', value: packageDuration, inline: true },
+              { name: 'Expires On', value: formattedExpiration, inline: true },
+              { name: 'Order ID', value: orderId, inline: true },
+              { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: true },
+              { name: 'Queue Position', value: `${queueNumber}`, inline: true }
+            )
+            .setColor(0x9B59B6)
+            .setThumbnail(screenshot.url)
+            .setTimestamp();
+          await orderListChannel.send({ embeds: [orderListEmbed] });
+        }
+      } catch (channelError) {
+        console.error('Error sending to order list channel:', channelError);
+      }
+
     } catch (error) {
       console.error('Error with orderproof command:', error);
       await interaction.editReply('❌ There was an error submitting your order proof! Please try again or contact a staff member.');
