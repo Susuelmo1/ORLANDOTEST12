@@ -31,6 +31,10 @@ module.exports = {
             value: '> Create this ticket if you would like to order VIP services.'
           },
           { 
+            name: '**<:4_:1337595042818891909> Discord Boost**',
+            value: '> Create this ticket if you would like to purchase Discord Boosts.'
+          },
+          { 
             name: '**<:PurpleLine:1336946927282950165> __Payment Links__**',
             value: '> **40 Bots:** [Copy Me](https://www.roblox.com/catalog/109981296260142)\n> **30 Bots:** [Copy Me](https://www.roblox.com/catalog/138973868529963)\n> **25 Bots:** [Copy Me](https://www.roblox.com/catalog/114907246125026)\n> **20 Bots:** [Copy Me](https://www.roblox.com/catalog/90251095378460)\n> **15 Bots:** [Copy Me](https://www.roblox.com/catalog/114311203640066)\n> **10 Bots:** [Copy Me](https://www.roblox.com/catalog/110507656911368)'
           },
@@ -41,6 +45,10 @@ module.exports = {
           { 
             name: '**<:PurpleLine:1336946927282950165> __VIP__**',
             value: '> **Lifetime:** [Copy Me](https://www.roblox.com/catalog/98202400395342)\n> **Month:** [Copy Me](https://www.roblox.com/catalog/85144990668024)\n> **Week:** [Copy Me](https://www.roblox.com/catalog/87544796577389)'
+          },
+          { 
+            name: '**<:PurpleLine:1336946927282950165> __Discord Boost__**',
+            value: '> **14x Boosts (1 Month):** $19.99 USD\n> **14x Boosts (3 Months):** $26.99 USD\n> **PayPal:** [Click Here](https://paypal.me/d1chelsa) (Send as Friends & Family)\n> **30 Days warranty | Server Level 3**'
           },
           { 
             name: '**<:PurpleLine:1336946927282950165> __Rules and Terms of Service__**',
@@ -69,7 +77,12 @@ module.exports = {
             .setCustomId('create_ticket_vip')
             .setLabel('VIP Order')
             .setEmoji('<:3_:1337595007548264448>')
-            .setStyle(ButtonStyle.Success)
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('create_ticket_boost')
+            .setLabel('Discord Boost')
+            .setEmoji('<:4_:1337595042818891909>')
+            .setStyle(ButtonStyle.Danger)
         );
 
       await channel.send({ embeds: [embed], components: [row] });

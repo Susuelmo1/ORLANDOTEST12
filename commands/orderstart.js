@@ -215,17 +215,34 @@ module.exports = {
       // Wait for the join process to complete
       await accountJoinPromise;
 
-      // Helper function to generate account info display
-      function generateAccountInfo(count, baseUsername) {
+      // Helper function to generate account info display with random Roblox-style usernames
+      function generateAccountInfo(count) {
+        const namePool = [
+          'RobloxPlayer', 'GameMaster', 'BrickBuilder', 'BlockMaster', 'PixelGamer',
+          'EpicGamer', 'AvatarHero', 'CubeKing', 'StarPlayer', 'LegendGamer',
+          'NinjaWarrior', 'PlatformRunner', 'SpeedDemon', 'CoolUser', 'ProGamerX',
+          'RobloxNinja', 'VirtualHero', 'GameAddict', 'BlockRunner', 'WorldExplorer'
+        ];
+        
+        const suffixes = ['Pro', 'Master', 'King', 'Queen', 'Boss', 'Legend', 'Hero', 'Ninja', 'Wizard', 'Champion'];
+        const random4Digits = () => Math.floor(1000 + Math.random() * 9000);
+        
+        const generateName = () => {
+          const randomName = namePool[Math.floor(Math.random() * namePool.length)];
+          const randomSuffix = Math.random() > 0.5 ? suffixes[Math.floor(Math.random() * suffixes.length)] : '';
+          const addDigits = Math.random() > 0.3;
+          
+          return `${randomName}${randomSuffix}${addDigits ? random4Digits() : ''}`;
+        };
+        
         let accountText = '';
-        accountText += `Main Account: \`${baseUsername}\`\n`;
+        const mainAccount = generateName();
+        accountText += `Main Account: \`${mainAccount}\`\n`;
 
         if (count > 1) {
           accountText += `Additional Accounts:\n`;
-          for (let i = 2; i <= count; i++) {
-            if (i <= 5) {
-              accountText += `\`${baseUsername}${i}\`\n`;
-            }
+          for (let i = 2; i <= Math.min(count, 5); i++) {
+            accountText += `\`${generateName()}\`\n`;
           }
 
           if (count > 5) {
@@ -277,7 +294,7 @@ module.exports = {
 
       // Send notification to the orders channel
       try {
-        const ordersChannelId = '1346648156053442643';
+        const ordersChannelId = '1346696797132951642';
         const ordersChannel = client.channels.cache.get(ordersChannelId);
 
         if (ordersChannel) {
@@ -432,14 +449,15 @@ module.exports = {
       } catch (browserError) {
         console.error('Error with browser automation:', browserError);
 
-        // Update status as failed
+        // Update status as failed with better error message
         const errorEmbed = new EmbedBuilder()
           .setTitle('<:purplearrow:1337594384631332885> **CONNECTION ERROR**')
-          .setDescription(`Error connecting Roblox accounts to ERLC server`)
+          .setDescription(`Technical difficulties encountered while connecting Roblox accounts`)
           .addFields(
-            { name: '**Server Code**', value: `\`${serverCode}\``, inline: false },
             { name: '**Status**', value: '❌ Connection Error', inline: false },
-            { name: '**Next Steps**', value: 'Staff will handle this manually. Please wait.', inline: false }
+            { name: '**Issue**', value: 'The automated connection system encountered a temporary technical issue.', inline: false },
+            { name: '**Next Steps**', value: 'A staff member has been notified and will manually handle your order. Your accounts will be connected shortly. Please be patient.', inline: false },
+            { name: '**Support**', value: 'If you need immediate assistance, please let us know in this ticket.', inline: false }
           )
           .setColor(0xED4245) // Red color for error
           .setTimestamp();

@@ -277,6 +277,10 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
         ticketName = `vip-${user.username.toLowerCase()}`;
         categoryName = 'VIP Tickets';
         break;
+      case 'boost':
+        ticketName = `boost-${user.username.toLowerCase()}`;
+        categoryName = 'Boost Tickets';
+        break;
       default:
         ticketName = `ticket-${user.username.toLowerCase()}`;
         categoryName = 'Tickets';
@@ -483,6 +487,32 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
         content: '**<:purplearrow:1337594384631332885> Please select a package:**', 
         components: [orderButtons1, orderButtons2, orderButtons3] 
       });
+    } else if (ticketType === 'boost') {
+      const boostButtons = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('product_boost_1month')
+            .setLabel('1 Month (30 Boosts)')
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('product_boost_3month')
+            .setLabel('3 Months (90 Boosts)')
+            .setStyle(ButtonStyle.Secondary)
+        );
+
+      const boostEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> **DISCORD BOOST**')
+        .setDescription('Select a boost package below:')
+        .addFields(
+          { name: '1 Month (30 Boosts)', value: '$19.99 USD', inline: true },
+          { name: '3 Months (90 Boosts)', value: '$26.99 USD', inline: true },
+          { name: 'Payment', value: 'PayPal: https://paypal.me/d1chelsa (Send as Friends & Family)' }
+        )
+        .setColor(0x9B59B6)
+        .setTimestamp();
+
+      await ticketChannel.send({ embeds: [boostEmbed], components: [boostButtons] });
+
     }
 
     // We no longer need a separate claim button since it's now next to the close button
@@ -670,7 +700,7 @@ client.on('interactionCreate', async interaction => {
 
             } catch (error) {
               console.error('Could not send DM to user:', error);
-              await interaction.editReply("❌ I couldn't send you a DM with instructions. Please make sure your DMs are open and try again.");
+              await interaction.editReply("❌ I couldn't send you a DM with instructions. Please makesure your DMs are open and try again.");
             }
           }
 
@@ -718,10 +748,6 @@ client.on('interactionCreate', async interaction => {
           await interaction.editReply('❌ There was an error creating your ticket! Please try again from the server.');
         }
       }
-      
-      // Close ticket button
-      else if (interaction.customId === 'close_ticket') {
-    }
 
       // Close ticket button
       else if (interaction.customId === 'close_ticket') {
@@ -916,6 +942,14 @@ client.on('interactionCreate', async interaction => {
               productInfo = 'VIP Access - Lifetime';
               productPrice = '$25.00';
               break;
+            case 'boost_1month':
+              productInfo = 'Discord Boost - 1 Month (30 Boosts)';
+              productPrice = '$19.99';
+              break;
+            case 'boost_3month':
+              productInfo = 'Discord Boost - 3 Months (90 Boosts)';
+              productPrice = '$26.99';
+              break;
             default:
               productInfo = 'Unknown Product';
               productPrice = 'Unknown Price';
@@ -941,6 +975,11 @@ client.on('interactionCreate', async interaction => {
             productEmbed.addFields({ 
               name: '**__VIP__**', 
               value: '> **Lifetime:** [Copy Me](https://www.roblox.com/catalog/98202400395342)\n> **Month:** [Copy Me](https://www.roblox.com/catalog/85144990668024)\n> **Week:** [Copy Me](https://www.roblox.com/catalog/87544796577389)'
+            });
+          } else if (product.includes('boost')) {
+            productEmbed.addFields({
+              name: 'Payment',
+              value: 'PayPal: https://paypal.me/d1chelsa (Send as Friends & Family)'
             });
           } else {
             // Standard bot packages

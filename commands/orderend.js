@@ -87,7 +87,7 @@ module.exports = {
 
       // Send to order ends channel
       try {
-        const orderEndsChannelId = '1346696797132951642';
+        const orderEndsChannelId = '1346648156053442643';
         const orderEndsChannel = client.channels.cache.get(orderEndsChannelId);
 
         if (orderEndsChannel) {
