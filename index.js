@@ -696,3 +696,4 @@ client.on('interactionCreate', async interaction => {
                   { 
                     name: '**`Step 3️⃣ – Key Generation`**', 
                     value: '> • Your key will match your purchase duration\n> ✅ You CANNOT open a ticket until you complete these required steps.\n> ❌ Falsifying order proof will result in an automatic ban.'
+                  }
