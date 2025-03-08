@@ -71,25 +71,25 @@ module.exports = {
                 label: 'Order Alts',
                 description: 'Create a ticket to order alts',
                 value: 'create_ticket_order',
-                emoji: '<:1_:1337594940179353681>'
+                emoji: '1️⃣'
               },
               {
                 label: 'General Support',
                 description: 'Create a ticket for general support',
                 value: 'create_ticket_support',
-                emoji: '<:2_:1337594974233165958>'
+                emoji: '2️⃣'
               },
               {
                 label: 'VIP Order',
                 description: 'Create a ticket for VIP services',
                 value: 'create_ticket_vip',
-                emoji: '<:3_:1337595007548264448>'
+                emoji: '3️⃣'
               },
               {
                 label: 'Discord Boost',
                 description: 'Create a ticket to purchase Discord Boosts',
                 value: 'create_ticket_boost',
-                emoji: '<:4_:1337595042818891909>'
+                emoji: '4️⃣'
               }
             ])
         );
