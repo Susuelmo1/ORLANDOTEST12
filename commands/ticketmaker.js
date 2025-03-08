@@ -1,5 +1,5 @@
 
-const { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, StringSelectMenuBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,7 +16,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **CHOOSE YOUR TICKET TYPE**')
-        .setDescription('***Click one of the buttons below to create a ticket!***')
+        .setDescription('***Select your ticket type from the dropdown menu below!***')
         .addFields(
           { 
             name: '**<:1_:1337594940179353681> Order Alts**',
@@ -60,32 +60,41 @@ module.exports = {
         .setThumbnail('https://media.discordapp.net/attachments/1336783170422571008/1336938605578289234/Screenshot_2025-02-05_at_10.08.18_PM-removebg-preview.png')
         .setColor(0x9B59B6); // Dark purple color
 
-      // Create proper Discord.js components
-      const row = new ActionRowBuilder()
+      // Create selection menu for ticket types
+      const ticketSelect = new ActionRowBuilder()
         .addComponents(
-          new ButtonBuilder()
-            .setCustomId('create_ticket_order')
-            .setLabel('Order Alts')
-            .setEmoji('<:1_:1337594940179353681>')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId('create_ticket_support')
-            .setLabel('General Support')
-            .setEmoji('<:2_:1337594974233165958>')
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId('create_ticket_vip')
-            .setLabel('VIP Order')
-            .setEmoji('<:3_:1337595007548264448>')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('create_ticket_boost')
-            .setLabel('Discord Boost')
-            .setEmoji('<:4_:1337595042818891909>')
-            .setStyle(ButtonStyle.Danger)
+          new StringSelectMenuBuilder()
+            .setCustomId('ticket_type_select')
+            .setPlaceholder('Select a ticket type')
+            .addOptions([
+              {
+                label: 'Order Alts',
+                description: 'Create a ticket to order alts',
+                value: 'create_ticket_order',
+                emoji: '<:1_:1337594940179353681>'
+              },
+              {
+                label: 'General Support',
+                description: 'Create a ticket for general support',
+                value: 'create_ticket_support',
+                emoji: '<:2_:1337594974233165958>'
+              },
+              {
+                label: 'VIP Order',
+                description: 'Create a ticket for VIP services',
+                value: 'create_ticket_vip',
+                emoji: '<:3_:1337595007548264448>'
+              },
+              {
+                label: 'Discord Boost',
+                description: 'Create a ticket to purchase Discord Boosts',
+                value: 'create_ticket_boost',
+                emoji: '<:4_:1337595042818891909>'
+              }
+            ])
         );
 
-      await channel.send({ embeds: [embed], components: [row] });
+      await channel.send({ embeds: [embed], components: [ticketSelect] });
       await interaction.editReply('✅ Ticket panel created successfully!');
 
     } catch (error) {

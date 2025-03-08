@@ -10,8 +10,8 @@ module.exports = {
         .setDescription('The type of boost package')
         .setRequired(true)
         .addChoices(
-          { name: '14x Boosts (1 Month)', value: '1month' },
-          { name: '14x Boosts (3 Months)', value: '3months' }
+          { name: '14x Boosts (1 Month) - $19.99', value: '1month' },
+          { name: '14x Boosts (3 Months) - $26.99', value: '3months' }
         ))
     .addAttachmentOption(option =>
       option.setName('proof')

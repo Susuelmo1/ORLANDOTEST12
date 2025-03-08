@@ -588,6 +588,123 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
 // Handle interactions
 client.on('interactionCreate', async interaction => {
   try {
+    // Handle select menu interactions
+    if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_type_select') {
+      await interaction.deferReply({ ephemeral: true });
+      
+      try {
+        // Get ticket type from selected value
+        const ticketType = interaction.values[0].replace('create_ticket_', '');
+        const guild = interaction.guild;
+        const user = interaction.user;
+
+        // Handle ticket creation based on type
+        if (ticketType === 'support') {
+          // Create support ticket directly
+          await createTicketChannel(interaction, guild, user, ticketType);
+        } else {
+          // Send instructions in DM for order, VIP, and boost tickets
+          try {
+            // Create appropriate embed based on ticket type
+            let dmEmbed;
+            
+            if (ticketType === 'boost') {
+              dmEmbed = new EmbedBuilder()
+                .setTitle(`<:purplearrow:1337594384631332885> **DISCORD BOOST ORDER PROCESS**`)
+                .setDescription(`***Hello ${user}!***\n\n**Before creating your ticket, please follow these important steps:**`)
+                .addFields(
+                  { 
+                    name: '**🚨 Important Notice**', 
+                    value: '```\n✅ Please read all the information below carefully.\n❌ All payments must be sent as Friends & Family.```'
+                  },
+                  { 
+                    name: '**`Step 1️⃣ – Boost Package Options`**', 
+                    value: '> **Choose from our premium boost packages:**\n> • **14x Boosts (1 Month):** $19.99 USD\n> • **14x Boosts (3 Months):** $26.99 USD'
+                  },
+                  { 
+                    name: '**`Step 2️⃣ – Payment Information`**', 
+                    value: '> **PayPal:** [Click Here](https://paypal.me/d1chelsa)\n> **Important:** Send payment as Friends & Family\n> **Note:** Include your Discord username in payment notes'
+                  },
+                  { 
+                    name: '**`Step 3️⃣ – Order Proof Submission`**', 
+                    value: '> **After payment, use the `/orderproofboost` command in your ticket with:**\n> • Select your boost package\n> • Upload screenshot of payment confirmation'
+                  },
+                  { 
+                    name: '**`Step 4️⃣ – Boost Delivery`**', 
+                    value: '> • Boosts will be applied within 1 hour\n> • 30 days warranty included\n> • Server will maintain Level 3 status'
+                  }
+                )
+                .setColor(0x9B59B6)
+                .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
+                .setFooter({ text: 'ERLC Alting Support | Read carefully before proceeding' });
+            } else {
+              // Default embed for order and VIP tickets
+              dmEmbed = new EmbedBuilder()
+                .setTitle(`<:purplearrow:1337594384631332885> **${ticketType.toUpperCase()} ORDER PROCESS**`)
+                .setDescription(`***Hello ${user}!***\n\n**Before creating your ticket, please follow these important steps:**`)
+                .addFields(
+                  { 
+                    name: '**🚨 Important Notice**', 
+                    value: '```\n✅ You CANNOT open a ticket until you complete these required steps.\n❌ Falsifying order proof will result in an automatic ban.```'
+                  },
+                  { 
+                    name: '**`Step 1️⃣ – Make Your Purchase`**', 
+                    value: '> **Purchase your desired package from one of these links:**'
+                  },
+                  { 
+                    name: '**<:PurpleLine:1336946927282950165> __Payment Links__**', 
+                    value: '> **40 Bots:** [Copy Me](https://www.roblox.com/catalog/109981296260142)\n> **30 Bots:** [Copy Me](https://www.roblox.com/catalog/138973868529963)\n> **25 Bots:** [Copy Me](https://www.roblox.com/catalog/114907246125026)\n> **20 Bots:** [Copy Me](https://www.roblox.com/catalog/90251095378460)\n> **15 Bots:** [Copy Me](https://www.roblox.com/catalog/114311203640066)\n> **10 Bots:** [Copy Me](https://www.roblox.com/catalog/110507656911368)'
+                  },
+                  { 
+                    name: '**<:PurpleLine:1336946927282950165> __Full Server__**', 
+                    value: '> **Full Server:** [Copy Me](https://www.roblox.com/catalog/101932399625607)\n> **Refill:** [Copy Me](https://www.roblox.com/catalog/133192264732348)'
+                  },
+                  { 
+                    name: '**<:PurpleLine:1336946927282950165> __VIP__**', 
+                    value: '> **Lifetime:** [Copy Me](https://www.roblox.com/catalog/98202400395342)\n> **Month:** [Copy Me](https://www.roblox.com/catalog/85144990668024)\n> **Week:** [Copy Me](https://www.roblox.com/catalog/87544796577389)'
+                  },
+                  { 
+                    name: '**`Step 2️⃣ – Order Proof Submission`**', 
+                    value: '> **After purchase, use the `/orderproof` command in your ticket with:**\n> • Your Roblox username\n> • Screenshot of your purchase'
+                  },
+                  { 
+                    name: '**`Step 3️⃣ – Key Generation`**', 
+                    value: '> • Your key will match your purchase duration\n> • The key is strictly confidential\n> • __***Must NOT be shared under any circumstances***__'
+                  }
+                )
+                .setColor(0x9B59B6)
+                .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png')
+                .setFooter({ text: 'ERLC Alting Support | Read carefully before proceeding' });
+            }
+
+            const confirmButton = new ActionRowBuilder()
+              .addComponents(
+                new ButtonBuilder()
+                  .setCustomId(`confirm_create_${ticketType}`)
+                  .setLabel('I Understand & Create Ticket')
+                  .setStyle(ButtonStyle.Success)
+                  .setEmoji('✅')
+              );
+
+            await user.send({ 
+              embeds: [dmEmbed],
+              components: [confirmButton]
+            });
+
+            await interaction.editReply(`✅ Check your DMs for important information before creating your ${ticketType} ticket!`);
+
+          } catch (error) {
+            console.error('Could not send DM to user:', error);
+            await interaction.editReply("❌ I couldn't send you a DM with instructions. Please make sure your DMs are open and try again.");
+          }
+        }
+      } catch (error) {
+        console.error('Error processing ticket selection:', error);
+        await interaction.editReply('❌ There was an error processing your selection! Please try again later.');
+      }
+      return;
+    }
+    
     // Handle slash commands
     if (interaction.isCommand()) {
       const command = client.commands.get(interaction.commandName);
