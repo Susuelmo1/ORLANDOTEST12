@@ -189,6 +189,37 @@ module.exports = {
         embeds: [orderProofEmbed]
       });
 
+      // Add prominent title for orderproof
+      await interaction.channel.send('# **📝 ORDER PROOF SUBMISSION**');
+
+      // Instructions for key usage - with much clearer formatting
+      const keyInstructionsEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> **NEXT STEPS**')
+        .setDescription('***After your order is verified, follow these steps:***')
+        .addFields(
+          { 
+            name: '**1️⃣ WAIT FOR KEY GENERATION**', 
+            value: '> A staff member will generate a unique key for you.\n> This may take a few minutes depending on staff availability.' 
+          },
+          { 
+            name: '**2️⃣ RECEIVE YOUR KEY**', 
+            value: '> You\'ll receive your key via DM or in this ticket.\n> ⚠️ **KEEP THIS KEY CONFIDENTIAL - DO NOT SHARE IT!**' 
+          },
+          { 
+            name: '**3️⃣ ORDER ACTIVATION**', 
+            value: '> Staff will activate your order using your key.\n> You\'ll receive the Alting Customer role automatically.' 
+          },
+          { 
+            name: '**💡 NEED TO ADD A FRIEND?**', 
+            value: '> You can add up to 3 friends to your ticket using:\n> **`/add @username`**\n> They\'ll be able to see and participate in this ticket.' 
+          }
+        )
+        .setColor(0x9B59B6)
+        .setTimestamp();
+
+      await interaction.channel.send({ embeds: [keyInstructionsEmbed] });
+
+
       // Log to a webhook
       try {
         const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';

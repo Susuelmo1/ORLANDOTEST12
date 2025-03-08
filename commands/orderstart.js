@@ -286,10 +286,36 @@ module.exports = {
           { name: 'Roblox Accounts', value: `\`${accountsCount}\``, inline: true },
           { name: 'Staff Member', value: `<@${interaction.user.id}>`, inline: true },
           { name: 'Start Time', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
-          { name: 'Server Code', value: `\`${serverCode}\``, inline: true },
-          { name: 'Key', value: `\`${key}\``, inline: false }
+          { name: 'Server Code', value: `\`${serverCode}\``, inline: true }
+          // Key removed as requested
         ]
       });
+      
+      // Send notification to the orders channel
+      try {
+        const ordersChannelId = '1346648156053442643';
+        const ordersChannel = client.channels.cache.get(ordersChannelId);
+        
+        if (ordersChannel) {
+          const orderEmbed = new EmbedBuilder()
+            .setTitle('<:purplearrow:1337594384631332885> **NEW ORDER STARTED**')
+            .setDescription(`***Order has been started for ${targetUser}***`)
+            .addFields(
+              { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
+              { name: '**Roblox Accounts**', value: `\`${accountsCount}\``, inline: true },
+              { name: '**Staff Member**', value: `<@${interaction.user.id}>`, inline: true },
+              { name: '**Start Time**', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
+              { name: '**Server Code**', value: `\`${serverCode}\``, inline: true }
+              // Key removed as requested
+            )
+            .setColor(0x9B59B6)
+            .setTimestamp();
+            
+          await ordersChannel.send({ embeds: [orderEmbed] });
+        }
+      } catch (channelError) {
+        console.error('Error sending to orders channel:', channelError);
+      }
 
       // Send a status update about connecting bots
       const statusEmbed = new EmbedBuilder()

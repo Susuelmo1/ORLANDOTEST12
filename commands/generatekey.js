@@ -1,328 +1,178 @@
-const { SlashCommandBuilder, EmbedBuilder, WebhookClient } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const crypto = require('crypto');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('generatekey')
-    .setDescription('Generate a key for a user')
-    .addStringOption(option => 
-      option.setName('package')
-        .setDescription('The package type')
-        .setRequired(true)
-        .addChoices(
-          { name: '10 Bots', value: '10_bots' },
-          { name: '15 Bots', value: '15_bots' },
-          { name: '20 Bots', value: '20_bots' },
-          { name: '25 Bots', value: '25_bots' },
-          { name: '30 Bots', value: '30_bots' },
-          { name: '40 Bots', value: '40_bots' },
-          { name: 'Full Server', value: 'full_server' },
-          { name: 'Refill', value: 'refill' },
-          { name: 'Week VIP', value: 'week_vip' },
-          { name: 'Month VIP', value: 'month_vip' },
-          { name: 'Lifetime VIP', value: 'lifetime_vip' }
-        ))
+    .setDescription('Generate a key for a customer')
     .addUserOption(option => 
       option.setName('user')
-        .setDescription('The user to generate a key for')
+        .setDescription('User to generate key for')
         .setRequired(true))
-    .addStringOption(option => 
-      option.setName('orderid')
-        .setDescription('The Order ID from orderproof')
+    .addIntegerOption(option =>
+      option.setName('accounts')
+        .setDescription('Number of Roblox accounts for this key')
         .setRequired(true))
     .addIntegerOption(option =>
       option.setName('queue_position')
-        .setDescription('Position in queue (optional)')
-        .setRequired(false))
+        .setDescription('Position in queue')
+        .setRequired(true))
     .addIntegerOption(option =>
-      option.setName('wait_time')
-        .setDescription('Estimated wait time in minutes (optional)')
-        .setRequired(false)),
+      option.setName('estimated_wait')
+        .setDescription('Estimated wait time in minutes')
+        .setRequired(true)),
 
   async execute(interaction, client) {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      // Check if user has staff role
+      // Check permissions
       const staffRoleId = process.env.STAFF_ROLE_ID || '1336741474708230164';
       const isStaff = interaction.member.roles.cache.has(staffRoleId);
       const ownersIds = ['523693281541095424', '1011347151021953145'];
       const isOwner = ownersIds.includes(interaction.user.id);
 
       if (!isStaff && !isOwner) {
-        return interaction.editReply('❌ Only staff members can use this command!');
+        return interaction.editReply('❌ **You do not have permission to use this command!**');
       }
 
-      const package = interaction.options.getString('package');
-      const user = interaction.options.getUser('user');
-      const orderId = interaction.options.getString('orderid');
+      const targetUser = interaction.options.getUser('user');
+      const accountsCount = interaction.options.getInteger('accounts');
+      const queuePosition = interaction.options.getInteger('queue_position');
+      const estimatedWait = interaction.options.getInteger('estimated_wait');
 
-      // Check if client.orderProofs exists
-      if (!client.orderProofs) {
-        client.orderProofs = new Map();
+      // Get target member
+      const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+      if (!member) {
+        return interaction.editReply(`❌ **Could not find member ${targetUser.tag} in this server.**`);
       }
 
-      // Standardize order ID case to make case-insensitive comparisons
-      const standardizedOrderId = orderId.toUpperCase().trim();
+      // Generate a unique order ID
+      const orderId = `${Math.floor(Math.random() * 10000000).toString(16).toUpperCase()}`;
 
-      // Check if order ID exists - search case-insensitively
-      let foundOrder = false;
-      let actualOrderId = null;
+      // Generate a secure key using crypto module
+      const generateSecureKey = () => {
+        return crypto.randomBytes(16).toString('hex').toUpperCase();
+      };
 
-      for (const [key, value] of client.orderProofs.entries()) {
-        if (key.toUpperCase().trim() === standardizedOrderId) {
-          foundOrder = true;
-          actualOrderId = key;
-          break;
-        }
-      }
+      const key = generateSecureKey();
 
-      if (!foundOrder) {
-        return interaction.editReply(`❌ Order ID \`${orderId}\` not found! Make sure the user has entered the correct ID and has submitted order proof first.`);
-      }
-
-      // Use the actual order ID with correct casing for subsequent operations
-      const orderDetails = client.orderProofs.get(actualOrderId);
-
-
-      // Define expiration period based on package
-      let expirationDays = 1; // Default to 1 day
-      let packageName = '';
-
-      switch (package) {
-        case '10_bots':
-          expirationDays = 1;
-          packageName = '10 Bots';
-          break;
-        case '15_bots':
-          expirationDays = 1;
-          packageName = '15 Bots';
-          break;
-        case '20_bots':
-          expirationDays = 1;
-          packageName = '20 Bots';
-          break;
-        case '25_bots':
-          expirationDays = 1;
-          packageName = '25 Bots';
-          break;
-        case '30_bots':
-          expirationDays = 1;
-          packageName = '30 Bots';
-          break;
-        case '40_bots':
-          expirationDays = 1;
-          packageName = '40 Bots';
-          break;
-        case 'full_server':
-          expirationDays = 1;
-          packageName = 'Full Server';
-          break;
-        case 'refill':
-          expirationDays = 1;
-          packageName = 'Refill';
-          break;
-        case 'week_vip':
-          expirationDays = 7;
-          packageName = 'Week VIP';
-          break;
-        case 'month_vip':
-          expirationDays = 30;
-          packageName = 'Month VIP';
-          break;
-        case 'lifetime_vip':
-          expirationDays = 36500; // ~100 years, essentially lifetime
-          packageName = 'Lifetime VIP';
-          break;
-        default:
-          expirationDays = 1;
-          packageName = 'Unknown Package';
-          break;
-      }
-
-      // Generate a unique key
-      const key = crypto.randomBytes(16).toString('hex').toUpperCase();
-
-      // Set expiration date
-      const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + expirationDays);
-
-      // Format expiration date for display
-      const formattedExpiration = expirationDate.toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      });
-
-      // Store key details globally (in a real app, this would be in a database)
+      // Store the key in global.generatedKeys map
       if (!global.generatedKeys) {
         global.generatedKeys = new Map();
       }
 
-      // Track usage history for this user
-      if (!global.userOrderHistory) {
-        global.userOrderHistory = new Map();
-      }
-
-      const orderHistory = global.userOrderHistory.get(user.id) || [];
-      orderHistory.push({
-        orderId: orderId,
-        package: packageName,
-        key: key,
-        generatedAt: new Date(),
-        expirationDate: expirationDate,
-        generatedBy: interaction.user.id
-      });
-      global.userOrderHistory.set(user.id, orderHistory);
-
       global.generatedKeys.set(key, {
-        userId: user.id,
-        package: packageName,
-        orderId: orderId,
-        generatedBy: interaction.user.id,
+        userId: targetUser.id,
+        accountsCount: accountsCount,
         generatedAt: new Date(),
-        expirationDate: expirationDate,
-        duration: `${expirationDays} days`,
+        generatedBy: interaction.user.id,
+        orderId: orderId,
         used: false
       });
 
-      // Calculate queue position and estimated time based on active orders
-      let queuePosition = 1;
-      let estimatedWaitMinutes = 5; // Default wait time
-
-      if (global.activeOrders) {
-        queuePosition = global.activeOrders.size + 1;
-        estimatedWaitMinutes = queuePosition * 2; // Assume 2 minutes per order
-      }
-
-      // Adjust queue position from command options if provided
-      const queuePositionOption = interaction.options.getInteger('queue_position');
-      const waitTimeOption = interaction.options.getInteger('wait_time');
-
-      if (queuePositionOption && queuePositionOption > 0) {
-        queuePosition = queuePositionOption;
-      }
-
-      if (waitTimeOption && waitTimeOption > 0) {
-        estimatedWaitMinutes = waitTimeOption;
-      }
-
-      // Create beautiful embed for staff
-      const staffEmbed = new EmbedBuilder()
+      // Send success message to staff
+      const successEmbed = new EmbedBuilder()
         .setTitle('<:purplearrow:1337594384631332885> **KEY GENERATED**')
-        .setDescription(`***A key has been generated for ${user}***`)
+        .setDescription(`***A key has been successfully generated for ${targetUser}***`)
         .addFields(
-          { name: '**Package**', value: `\`${packageName}\``, inline: true },
           { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
-          { name: '**Duration**', value: `\`${expirationDays} days\``, inline: true },
-          { name: '**Expires**', value: `\`${formattedExpiration}\``, inline: true },
-          { name: '**Key**', value: `||**\`${key}\`**|| (ID: \`${orderId}\`)`, inline: false },
-          { name: '**Estimated Time**', value: `Based on current queue, your service will be ready in approximately ${estimatedWaitMinutes} minutes.`, inline: false },
-          { name: '**<:PurpleLine:1336946927282950165> Next Steps**', value: `Use \`/orderstart\` to activate this key for the user.` }
+          { name: '**Accounts**', value: `\`${accountsCount}\``, inline: true },
+          { name: '**Key**', value: `\`${key}\``, inline: false },
+          { name: '**__IMPORTANT__**', value: `***Please share this key securely with ${targetUser}.***` }
         )
         .setColor(0x9B59B6)
-        .setTimestamp()
-        .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
+        .setTimestamp();
 
-      // Send key details to staff
-      await interaction.editReply({ embeds: [staffEmbed] });
+      await interaction.editReply({ embeds: [successEmbed] });
 
-      // Try to DM user about their key
+      // Send key to staff member in DM
       try {
-        const userEmbed = new EmbedBuilder()
-          .setTitle('<:purplearrow:1337594384631332885> **YOUR KEY IS READY**')
-          .setDescription(`***Your ${packageName} key has been generated!***`)
+        const staffDmEmbed = new EmbedBuilder()
+          .setTitle('<:purplearrow:1337594384631332885> **KEY GENERATED**')
+          .setDescription(`***Key for ${targetUser.tag}***`)
           .addFields(
-            { name: '**Key**', value: `||**\`${key}\`**||`, inline: false },
-            { name: '**Duration**', value: `\`${expirationDays} days\``, inline: true },
-            { name: '**Expires**', value: `\`${formattedExpiration}\``, inline: true },
             { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
-            { name: '**<:PurpleLine:1336946927282950165> Important**', value: `__***Do not share this key with anyone!***__\nThis key is tied to your account and using it gives access to our services.` }
+            { name: '**Accounts**', value: `\`${accountsCount}\``, inline: true },
+            { name: '**Key**', value: `\`${key}\``, inline: false },
+            { name: '**__REMINDER__**', value: '***⚠️ This key is sensitive and should be shared securely.***' }
           )
           .setColor(0x9B59B6)
           .setTimestamp();
 
-        await user.send({ embeds: [userEmbed] });
-
-        // Let staff know that DM was sent
-        await interaction.followUp({ 
-          content: `✅ Key has been DMed to ${user}!`, 
-          ephemeral: true 
-        });
+        await interaction.user.send({ embeds: [staffDmEmbed] });
       } catch (dmError) {
-        console.error('Could not send DM to user:', dmError);
+        console.error(`Could not send DM to staff ${interaction.user.tag}:`, dmError);
+        await interaction.followUp({ content: '⚠️ **I couldn\'t send you the key via DM. Make sure your DMs are open!**', ephemeral: true });
+      }
+
+      // Send key to the user in DM
+      try {
+        const userDmEmbed = new EmbedBuilder()
+          .setTitle('<:purplearrow:1337594384631332885> **YOUR KEY IS READY**')
+          .setDescription(`***Here is your key for ${accountsCount} accounts***`)
+          .addFields(
+            { name: '**Order ID**', value: `\`${orderId}\``, inline: true },
+            { name: '**Key**', value: `\`${key}\``, inline: false },
+            { name: '**__⚠️ IMPORTANT SECURITY WARNING__**', value: '***This key is strictly confidential and must not be shared with anyone. Keep it safe!***' }
+          )
+          .setColor(0x9B59B6)
+          .setTimestamp();
+
+        await targetUser.send({ embeds: [userDmEmbed] });
+      } catch (userDmError) {
+        console.error(`Could not send DM to user ${targetUser.tag}:`, userDmError);
         await interaction.followUp({ 
-          content: `⚠️ Could not DM the key to ${user}. Their DMs may be closed.`, 
+          content: `⚠️ **I couldn't send the key to ${targetUser} via DM. Their DMs may be closed. You'll need to share it securely in the ticket.**`, 
           ephemeral: true 
         });
       }
 
-      // Log to a webhook
+      // Send queue update to the channel
+      const packageName = `${accountsCount} Bots`;
+
+      const queueEmbed = new EmbedBuilder()
+        .setTitle('<:purplearrow:1337594384631332885> **QUEUE UPDATE**')
+        .setDescription(`***A new key has been generated for ${targetUser}***`)
+        .addFields(
+          { name: '**Queue Position**', value: `#${queuePosition}`, inline: true },
+          { name: '**Estimated Wait Time**', value: `${estimatedWait} minutes`, inline: true },
+          { name: '**Package**', value: packageName, inline: true },
+          { name: '**Order ID**', value: `\`${orderId}\``, inline: true }
+        )
+        .setColor(0x9B59B6)
+        .setTimestamp();
+
+      // Send to the channel (not ephemeral)
+      await interaction.channel.send({ content: `${targetUser}`, embeds: [queueEmbed] });
+
+      // Log to webhook
       try {
         const webhookUrl = process.env.LOG_WEBHOOK_URL || 'https://discord.com/api/webhooks/1346305081678757978/91mevrNJ8estfsvHZOpLOQU_maUJhqElxUpUGqqXS0VLWZe3o_UCVqiG7inceETjSL09';
+        const { WebhookClient } = require('discord.js');
         const webhook = new WebhookClient({ url: webhookUrl });
 
-        // Get order details for more comprehensive logging
-
-        const robloxUsername = orderDetails ? orderDetails.robloxUsername : 'Unknown';
-
         const logEmbed = new EmbedBuilder()
-          .setTitle('<:alting:1336938112261029978> **KEY GENERATED**')
-          .setDescription(`A key has been generated by ${interaction.user.tag}`)
+          .setTitle('Key Generated')
+          .setDescription(`A key has been generated for ${targetUser.tag}`)
           .addFields(
-            { name: 'Generated For', value: `${user.tag} (<@${user.id}>)`, inline: true },
-            { name: 'Roblox Username', value: `\`${robloxUsername}\``, inline: true },
-            { name: 'Package', value: `\`${packageName}\``, inline: true },
             { name: 'Order ID', value: `\`${orderId}\``, inline: true },
-            { name: 'Duration', value: `\`${expirationDays} days\``, inline: true },
-            { name: 'Key', value: `||**\`${key}\`**||`, inline: false },
-            { name: 'Expires', value: `\`${formattedExpiration}\``, inline: true },
-            { name: 'Status', value: '`✅ Active`', inline: true }
+            { name: 'Accounts', value: `\`${accountsCount}\``, inline: true },
+            { name: 'Generated By', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+            { name: 'Queue Position', value: `#${queuePosition}`, inline: true },
+            { name: 'Estimated Wait', value: `${estimatedWait} minutes`, inline: true }
           )
           .setColor(0x9B59B6)
           .setTimestamp();
 
-        // Add screenshot if available
-        if (orderDetails && orderDetails.screenshotUrl) {
-          logEmbed.setThumbnail(orderDetails.screenshotUrl);
-        }
-
         await webhook.send({ embeds: [logEmbed] });
-
-        // Send queue status to the specific channel
-        const queueChannel = await client.channels.fetch('1346304963445260338').catch(console.error);
-        if (queueChannel) {
-          const queueEmbed = new EmbedBuilder()
-            .setTitle('<:purplearrow:1337594384631332885> **QUEUE UPDATE**')
-            .setDescription(`***A new key has been generated for ${user.tag}***`)
-            .addFields(
-              { name: '**Queue Position**', value: `#${queuePosition}`, inline: true },
-              { name: '**Estimated Wait Time**', value: `${estimatedWaitMinutes} minutes`, inline: true },
-              { name: '**Package**', value: `\`${packageName}\``, inline: true },
-              { name: '**Order ID**', value: `\`${orderId}\``, inline: true }
-            )
-            .setColor(0x9B59B6)
-            .setTimestamp()
-            .setImage('https://cdn.discordapp.com/attachments/1336783170422571008/1336939044743155723/Screenshot_2025-02-05_at_10.58.23_PM.png');
-
-          await queueChannel.send({ embeds: [queueEmbed] });
-        }
       } catch (webhookError) {
         console.error('Error sending webhook:', webhookError);
       }
 
     } catch (error) {
       console.error('Error generating key:', error);
-      await interaction.editReply('❌ There was an error generating the key! Please try again.');
+      await interaction.editReply('❌ **There was an error generating the key! Please try again or contact an administrator.**');
     }
   }
 };
-
-async function sendWebhook(url, data) {
-  try {
-    const webhook = new WebhookClient({ url });
-    await webhook.send(data);
-  } catch (error) {
-    console.error('Error sending to webhook:', error);
-  }
-}

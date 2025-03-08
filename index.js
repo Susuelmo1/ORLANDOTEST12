@@ -47,12 +47,12 @@ if (!client.orderProofs) {
 // Event listener for when the bot is ready
 client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
-  
+
   // Join voice channel and stay there
   try {
     const voiceChannelId = '1347687786039214122';
     const { joinVoiceChannel, createAudioPlayer, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
-    
+
     // Join the voice channel
     const channel = client.channels.cache.get(voiceChannelId);
     if (channel) {
@@ -92,7 +92,7 @@ client.once('ready', async () => {
   } catch (error) {
     console.error('Error joining voice channel:', error);
   }
-  
+
   registerCommands();
 });
 
@@ -390,6 +390,10 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
         .setFooter({ text: 'ERLC Alting Support' });
     }
 
+    // Ping the user and staff role at the top of the ticket
+    // This will be sent first before the welcome messages
+    await ticketChannel.send(`${user} <@&${staffRoleId}>`);
+
     // Send the welcome message and buttons to the ticket channel without pinging the user
     await ticketChannel.send({ embeds: [welcomeEmbed], components: [ticketButtons] });
 
@@ -505,32 +509,6 @@ async function createTicketChannel(interaction, guild, user, ticketType, fromDM 
     } catch (webhookError) {
       console.error('Error sending webhook:', webhookError);
     }
-
-    // Ping the user and staff role in the ticket
-    await ticketChannel.send(`${user} <@&${staffRoleId}>`);
-
-    // Track ticket creation for logging
-    if (!global.ticketStats) {
-      global.ticketStats = {
-        total: 0,
-        byType: {
-          order: 0,
-          support: 0,
-          vip: 0
-        },
-        byUser: new Map()
-      };
-    }
-
-    global.ticketStats.total++;
-    global.ticketStats.byType[ticketType]++;
-
-    const userStats = global.ticketStats.byUser.get(user.id) || { total: 0, types: {} };
-    userStats.total++;
-    userStats.types[ticketType] = (userStats.types[ticketType] || 0) + 1;
-    global.ticketStats.byUser.set(user.id, userStats);
-
-    // Log to webhook if configured
 
 
     // Handle DM context
@@ -738,7 +716,7 @@ client.on('interactionCreate', async interaction => {
         } catch (error) {
           console.error('Error creating ticket from DM confirmation:', error);
           await interaction.editReply('❌ There was an error creating your ticket! Please try again from the server.');
-        }
+        }}
       }
 
       // Close ticket button
